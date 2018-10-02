@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
+import time
 
 from logbook import Logger, StreamHandler
 from splinter.exceptions import ElementDoesNotExist
+from selenium.common.exceptions import StaleElementReferenceException
 
 
 def logging():
@@ -153,12 +156,42 @@ def remove_user(browser, log):
     return True
 
 
+def match_result(last_msg, pattern):
+    return bool(re.match(pattern, last_msg.text))
+
+
+def compare_result(last_msg, expected_msg):
+    return last_msg.text == expected_msg
+
+
+def send_msg_and_try_check_result(browser, expected_msg, count_of_msg=1, match=0, count_of_loops=30):
+    send_msg_btn = browser.find_by_css(
+        'svg.rc-icon.rc-input__icon-svg.rc-input__icon-svg--send'
+    ).first
+    send_msg_btn.click()
+    checker = match_result if match else compare_result
+    for i in range(count_of_loops):
+        time.sleep(1)
+        last_msg = browser.driver.find_elements_by_css_selector(
+            'div.body.color-primary-font-color '
+        )[-count_of_msg:]
+        try:
+            done = all([checker(msg, expected_msg) for msg in last_msg])
+        except StaleElementReferenceException:
+            continue
+        if done:
+            return last_msg
+    return None
+
+
+# for compatibility
+
+
 def click_send_btn_and_get_last_msg(browser):
     send_msg_btn = browser.find_by_css(
         'svg.rc-icon.rc-input__icon-svg.rc-input__icon-svg--send'
     ).first
     send_msg_btn.click()
-
     last_msg = browser.driver.find_elements_by_css_selector(
         'div.body.color-primary-font-color '
     )[-1]

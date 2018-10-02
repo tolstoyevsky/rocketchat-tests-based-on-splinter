@@ -7,9 +7,10 @@ from splinter import Browser
 
 from base import logging
 import happy_birthder
+import pugme
 
 BROWSER_WINDOW_SIZE = (1920, 1080)
-BOTS_FOR_TESTING = [happy_birthder]
+BOTS_FOR_TESTING = [happy_birthder, pugme]
 
 
 def main():
@@ -74,6 +75,8 @@ parser.add_argument('-a', '--all', action='store_true',
                     help='run all tests.')
 parser.add_argument('-b', '--happy_birthder', action='store_true',
                     help='run happy birthder test.')
+parser.add_argument('-p', '--pugme', action='store_true',
+                    help='run pugme test.')
 args = parser.parse_args()
 args_dict = vars(args)
 

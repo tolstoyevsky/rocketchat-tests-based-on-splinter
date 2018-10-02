@@ -12,6 +12,7 @@ Setup:
   - USER_USERNAME=
   - USER_EMAIL=
   - USER_PASSWORD=
+  - PUGS_LIMIT=
 - ./setup.sh
 
 Help:
@@ -23,3 +24,5 @@ Launch:
   - ./test_hubots_bots.py -a (--all)
 - run test happy birthder:
   - ./test_hubots_bots.py -b (--happy_birthder)
+- run test pugme:
+  - ./test_hubots_bots.py -p (--pugme)
