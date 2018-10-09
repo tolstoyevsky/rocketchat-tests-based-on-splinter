@@ -307,6 +307,15 @@ class RocketChatTestCase(SplinterTestCase):
 
         selected_user.first.click()
 
+        more_btn = self.find_by_css(
+            'button.rc-tooltip.rc-room-actions__button.js-more'
+            '[aria-label="More"]'
+        )
+
+        assert len(more_btn)
+
+        more_btn.first.click()
+
         try:
             delete_btn = self.find_by_xpath(
                 '//li[@class="rc-popover__item js-action"]'
