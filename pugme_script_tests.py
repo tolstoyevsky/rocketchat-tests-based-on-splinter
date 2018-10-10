@@ -20,25 +20,32 @@ from base import RocketChatTestCase
 
 
 class PugmeScriptTestCase(RocketChatTestCase):
-    def __init__(self, addr, username, password, **kwargs):
+    def __init__(self, addr, username, password, pugs_limit, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
 
         self.schedule_pre_test_case('choose_general_channel')
 
         self._bot_name = 'meeseeks'
         self._expected_message = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+        self._pugs_limit = pugs_limit
 
     def test_requesting_1_pug(self):
         self.send_message('{} pug me'.format(self._bot_name))
-        # TODO: need to check the response
+
+        assert self.check_latest_response_with_retries(self._expected_message,
+                                                       match=True)
 
     def test_pug_bomb_3(self):
         self.send_message('{} pug bomb 3'.format(self._bot_name))
-        # TODO: need to check the response
+
+        assert self.check_latest_response_with_retries(self._expected_message,
+                                                       match=True, messages_number=3)
 
     def test_pug_bomb_limit(self):
         self.send_message('{} pug bomb'.format(self._bot_name))
-        # TODO: need to check the response
+
+        assert self.check_latest_response_with_retries(self._expected_message,
+                                                       match=True, messages_number=int(self._pugs_limit))
 
 
 def main():
@@ -49,6 +56,8 @@ def main():
                       help='allows specifying admin username')
     parser.add_option('-p', '--password', dest='password',
                       help='allows specifying admin password')
+    parser.add_option('-l', '--pugs_limit', dest='pugs_limit',
+                      help='allows specifying limit for pugs')
     options, args = parser.parse_args()
 
     if not options.host:
@@ -60,13 +69,13 @@ def main():
     if not options.password:
         parser.error('Password is not specified')
 
-    test_cases = PugmeScriptTestCase(options.host, options.username,
-                                     options.password, create_test_user=False)
+    if not options.pugs_limit:
+        parser.error('Pugs limit is not specified')
+
+    test_cases = PugmeScriptTestCase(options.host, options.username, options.password,
+                                     pugs_limit=options.pugs_limit, create_test_user=False)
     test_cases.run()
 
 
 if __name__ == '__main__':
     main()
-
-
-

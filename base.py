@@ -15,12 +15,14 @@
 # limitations under the License.
 
 import collections
+import re
 import sys
 import time
 import traceback
 from curses import tparm, tigetstr, setupterm
 
 from splinter import Browser
+from selenium.common.exceptions import StaleElementReferenceException
 
 
 class OrderedClassMembers(type):
@@ -151,6 +153,7 @@ class RocketChatTestCase(SplinterTestCase):
         self.browser.quit()
 
     def check_latest_response_with_retries(self, expected_text,
+                                           match=False, messages_number=1,
                                            attempts_number=30):
         for i in range(attempts_number):
             latest_msg = self.browser.driver.find_elements_by_css_selector(
@@ -158,7 +161,18 @@ class RocketChatTestCase(SplinterTestCase):
 
             assert len(latest_msg)
 
-            if latest_msg[-1].text != expected_text:
+            latest_msg = latest_msg[-messages_number:]
+            try:
+                if match:
+                    done = all([bool(re.match(expected_text, msg.text))
+                                for msg in latest_msg])
+                else:
+                    done = all([(expected_text == msg.text)
+                                for msg in latest_msg])
+            except StaleElementReferenceException:
+                continue
+
+            if not done:
                 time.sleep(1)
                 continue
 
