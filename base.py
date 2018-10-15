@@ -180,14 +180,25 @@ class RocketChatTestCase(SplinterTestCase):
 
         return False
 
-    def choose_general_channel(self):
-        general_channel = self.browser.driver.find_elements_by_css_selector(
+    def get_message_by_number(self, number):
+        messages = self.browser.driver.find_elements_by_css_selector(
+            'div.body.color-primary-font-color ')
+        assert len(messages) >= abs(number)
+        return messages[number]
+
+    def switch_channel(self, channel_name):
+        channels = self.browser.driver.find_elements_by_css_selector(
             'div.sidebar-item__ellipsis'
         )
+        assert len(channels)
 
-        assert len(general_channel)
+        channel = list(filter(lambda elem: elem.text == channel_name, channels))
+        assert len(channel) == 1
 
-        general_channel[0].click()
+        channel[0].click()
+
+    def choose_general_channel(self):
+        self.switch_channel('general')
 
     def create_user(self):
         options_btn = self.browser.find_by_css(
@@ -279,9 +290,11 @@ class RocketChatTestCase(SplinterTestCase):
 
         close_btn.click()
 
-    def login(self):
-        self.browser.fill('emailOrUsername', self.username)
-        self.browser.fill('pass', self.password)
+    def login(self, use_test_user=False):
+        self.browser.fill('emailOrUsername',
+                          self.test_username if use_test_user else self.username)
+        self.browser.fill('pass',
+                          self.test_password if use_test_user else self.password)
 
         login_btn = self.find_by_css('.rc-button.rc-button--primary.login')
 
@@ -292,6 +305,15 @@ class RocketChatTestCase(SplinterTestCase):
         welcome_text = self.browser.find_by_text('Welcome to Rocket.Chat!')
 
         assert len(welcome_text)
+
+    def logout(self):
+        avatar = self.find_by_css('.avatar')
+        assert avatar
+        avatar.click()
+
+        logout_btn = self.find_by_css('.rc-popover__item.js-action')
+        assert logout_btn
+        logout_btn.last.click()
 
     def remove_user(self):
         options_btn = self.browser.driver.find_elements_by_css_selector(
