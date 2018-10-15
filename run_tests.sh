@@ -93,6 +93,9 @@ for i in "${RUN[@]}"; do
         pugme_script)
             ${PYTHON} pugme_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --pugs_limit="${PUGS_LIMIT}" || exit_code=$?
             ;;
+        viva_las_vegas_script)
+            ${PYTHON} viva_las_vegas_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}"
+            ;;
         vote_or_die_script)
             ${PYTHON} vote_or_die_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" || exit_code=$?
             ;;

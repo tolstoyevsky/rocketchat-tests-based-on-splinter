@@ -251,6 +251,12 @@ class RocketChatTestCase(SplinterTestCase):
 
         return False
 
+    def get_message_by_number(self, number):
+        messages = self.browser.driver.find_elements_by_css_selector(
+            'div.body.color-primary-font-color ')
+        assert len(messages) >= abs(number)
+        return messages[number]
+
     def switch_channel(self, channel_name):
         channels = self.browser.driver.find_elements_by_css_selector(
             'div.sidebar-item__ellipsis'
