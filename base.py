@@ -279,9 +279,11 @@ class RocketChatTestCase(SplinterTestCase):
 
         close_btn.click()
 
-    def login(self):
-        self.browser.fill('emailOrUsername', self.username)
-        self.browser.fill('pass', self.password)
+    def login(self, use_test_user=False):
+        self.browser.fill('emailOrUsername',
+                          self.test_username if use_test_user else self.username)
+        self.browser.fill('pass',
+                          self.test_password if use_test_user else self.password)
 
         login_btn = self.find_by_css('.rc-button.rc-button--primary.login')
 
@@ -292,6 +294,15 @@ class RocketChatTestCase(SplinterTestCase):
         welcome_text = self.browser.find_by_text('Welcome to Rocket.Chat!')
 
         assert len(welcome_text)
+
+    def logout(self):
+        avatar = self.find_by_css('.avatar')
+        assert avatar
+        avatar.click()
+
+        logout_btn = self.find_by_css('.rc-popover__item.js-action')
+        assert logout_btn
+        logout_btn.last.click()
 
     def remove_user(self):
         options_btn = self.browser.driver.find_elements_by_css_selector(

@@ -15,7 +15,6 @@
 # limitations under the License.
 
 from datetime import datetime, timedelta
-
 from optparse import OptionParser
 
 from base import RocketChatTestCase
@@ -84,22 +83,35 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
             if confirm
             else 'Я прервал процесс формирования заявки на отпуск.')
 
-    def approve_vacation(self):
+    def approve_vacation(self, is_admin=True):
         self.send_message('{0} одобрить заявку @{1}'.format(self._bot_name, self.username))
-        assert self.check_latest_response_with_retries(
-            "Заявка @{} одобрена. Я отправлю ему уведомление об этом.".format(self.username))
+        if is_admin:
+            assert self.check_latest_response_with_retries(
+                "Заявка @{} одобрена. Я отправлю ему уведомление об этом.".format(self.username))
+        else:
+            assert self.check_latest_response_with_retries(
+                'У тебя недостаточно прав для этой команды 🙄')
 
-    def reject_vacation(self):
+    def reject_vacation(self, is_admin=True):
         self.send_message('{0} отклонить заявку @{1}'.format(self._bot_name, self.username))
-        assert self.check_latest_response_with_retries(
-            "Заявка @{} отклонена. Я отправлю ему уведомление об этом.".format(self.username))
+        if is_admin:
+            assert self.check_latest_response_with_retries(
+                "Заявка @{} отклонена. Я отправлю ему уведомление об этом.".format(self.username))
+        else:
+            assert self.check_latest_response_with_retries(
+                'У тебя недостаточно прав для этой команды 🙄')
 
-    def cancel_vacation(self):
+    def cancel_vacation(self, is_admin=True):
         self.send_message('{0} отменить заявку @{1}'.format(self._bot_name, self.username))
-        assert self.check_latest_response_with_retries(
-            "Отпуск пользователя @{} отменен.".format(self.username))
+        if is_admin:
+            assert self.check_latest_response_with_retries(
+                "Отпуск пользователя @{} отменен.".format(self.username))
+        else:
+            assert self.check_latest_response_with_retries(
+                'У тебя недостаточно прав для этой команды 🙄')
 
     def test_viva_las_vegas_with_approve(self):
+        self.choose_general_channel()
         self.send_vacation_request()
         self.input_start_date()
         self.input_end_date()
@@ -114,8 +126,51 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self.confirm_dates()
         self.reject_vacation()
 
-    def test_viva_las_vegas_without_permission(self):
+    def test_approve_notification(self):
+        self.choose_general_channel()
+        self.send_vacation_request()
+        self.input_start_date()
+        self.input_end_date()
+        self.confirm_dates()
+        self.approve_vacation()
+
+    def test_reject_notification(self):
         pass
+
+    def test_cancel_notification(self):
+        pass
+
+    def test_viva_las_vegas_approve_without_permission(self):
+        self.logout()
+        self.login(use_test_user=True)
+        self.choose_general_channel()
+
+        self.send_vacation_request()
+        self.input_start_date()
+        self.input_end_date()
+        self.confirm_dates()
+        self.approve_vacation(is_admin=False)
+
+        self.logout()
+        self.login()
+        self.approve_vacation()
+        self.cancel_vacation()
+
+    def test_viva_las_vegas_reject_without_permission(self):
+        self.logout()
+        self.login(use_test_user=True)
+        self.choose_general_channel()
+
+        self.send_vacation_request()
+        self.input_start_date()
+        self.input_end_date()
+        self.confirm_dates()
+        self.reject_vacation(is_admin=False)
+
+        self.logout()
+        self.login()
+        self.choose_general_channel()
+        self.reject_vacation()
 
 
 def main():
@@ -138,7 +193,7 @@ def main():
         parser.error('Password is not specified')
 
     test_cases = VivaLasVegasScriptTestCase(options.host, options.username, options.password,
-                                            create_test_user=False)
+                                            create_test_user=True)
     test_cases.run()
 
 
