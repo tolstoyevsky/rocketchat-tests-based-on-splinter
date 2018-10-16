@@ -16,7 +16,7 @@
 set -e
 
 if [ -f .env ]; then
-    . ./env
+    . ./.env
 fi
 
 set -x
