@@ -38,6 +38,8 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
 
         self._too_long_end_date = (datetime.now() + timedelta(days=44)).strftime('%d.%m')
 
+        self._max_response_date = (datetime.now() + timedelta(days=7)).strftime('%d.%m')
+
         self._invalid_dates = ('99.99', '31.09', '30.02')
 
     def _send_vacation_request(self):
@@ -130,6 +132,12 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries(
             'Упс, пользователь @{0} только что отменил твою заявку на отпуск.'.format(self.username))
 
+    def _check_vacation_notification(self):
+        assert self.get_message_by_number(-2).text == self._dividing_message
+        assert self.check_latest_response_with_retries(
+            'Пользователь @abs_lord хочет в отпуск с {0} по {1}. Ответ нужно дать до {2}.'.format(
+                self._vacation_start_date, self._vacation_end_date, self._max_response_date))
+
     def test_viva_las_vegas_with_approve(self):
         self.choose_general_channel()
         self._send_vacation_request()
@@ -186,6 +194,29 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self.switch_channel(self._bot_name)
         self._check_cancel_notification()
         self.choose_general_channel()
+
+    def test_vacation_notification_in_leave_coordination_channel(self):
+        self.switch_channel('leave-coordination')
+        self._send_dividing_message()
+        self.choose_general_channel()
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self.switch_channel('leave-coordination')
+        self._check_vacation_notification()
+        self.choose_general_channel()
+        self._approve_vacation()
+        self._cancel_vacation()
+
+    def test_approve_notification_in_leave_coordination_channel(self):
+        pass
+
+    def test_reject_notification_in_leave_coordination_channel(self):
+        pass
+
+    def test_cancel_notification_in_leave_coordination_channel(self):
+        pass
 
     def test_viva_las_vegas_approve_without_permission(self):
         self.logout()
