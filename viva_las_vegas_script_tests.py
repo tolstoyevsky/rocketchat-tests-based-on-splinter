@@ -28,6 +28,8 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
 
         self._bot_name = 'meeseeks'
 
+        self._dividing_message = 'Hello from dividing message for tests'
+
         self._vacation_start_date = (datetime.now() + timedelta(days=15)).strftime('%d.%m')
 
         self._too_close_start_date = (datetime.now() + timedelta(days=1)).strftime('%d.%m')
@@ -110,6 +112,24 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
             assert self.check_latest_response_with_retries(
                 'У тебя недостаточно прав для этой команды 🙄')
 
+    def _send_dividing_message(self):
+        self.send_message(self._dividing_message)
+
+    def _check_approve_notification(self):
+        assert self.get_message_by_number(-2).text == self._dividing_message
+        assert self.check_latest_response_with_retries(
+            'Заявка на отпуск одобрена.')
+
+    def _check_reject_notification(self):
+        assert self.get_message_by_number(-2).text == self._dividing_message
+        assert self.check_latest_response_with_retries(
+            'Заявка на отпуск отклонена.')
+
+    def _check_cancel_notification(self):
+        assert self.get_message_by_number(-3).text == self._dividing_message
+        assert self.check_latest_response_with_retries(
+            'Упс, пользователь @{0} только что отменил твою заявку на отпуск.'.format(self.username))
+
     def test_viva_las_vegas_with_approve(self):
         self.choose_general_channel()
         self._send_vacation_request()
@@ -127,18 +147,45 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._reject_vacation()
 
     def test_approve_notification(self):
+        self.switch_channel(self._bot_name)
+        self._send_dividing_message()
         self.choose_general_channel()
         self._send_vacation_request()
         self._input_start_date()
         self._input_end_date()
         self._confirm_dates()
         self._approve_vacation()
+        self.switch_channel(self._bot_name)
+        self._check_approve_notification()
+        self.choose_general_channel()
+        self._cancel_vacation()
 
     def test_reject_notification(self):
-        pass
+        self.switch_channel(self._bot_name)
+        self._send_dividing_message()
+        self.choose_general_channel()
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._reject_vacation()
+        self.switch_channel(self._bot_name)
+        self._check_reject_notification()
+        self.choose_general_channel()
 
     def test_cancel_notification(self):
-        pass
+        self.switch_channel(self._bot_name)
+        self._send_dividing_message()
+        self.choose_general_channel()
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._approve_vacation()
+        self._cancel_vacation()
+        self.switch_channel(self._bot_name)
+        self._check_cancel_notification()
+        self.choose_general_channel()
 
     def test_viva_las_vegas_approve_without_permission(self):
         self.logout()

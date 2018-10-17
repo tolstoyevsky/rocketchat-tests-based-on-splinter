@@ -24,6 +24,12 @@ from curses import tparm, tigetstr, setupterm
 from splinter import Browser
 from selenium.common.exceptions import StaleElementReferenceException
 
+# for fix error in debug mode
+import os
+import pydevd
+pydevd.settrace('localhost', port=8899)
+os.environ['TERM'] = 'xterm'
+
 
 class OrderedClassMembers(type):
     @classmethod
@@ -180,14 +186,25 @@ class RocketChatTestCase(SplinterTestCase):
 
         return False
 
-    def choose_general_channel(self):
-        general_channel = self.browser.driver.find_elements_by_css_selector(
+    def get_message_by_number(self, number):
+        messages = self.browser.driver.find_elements_by_css_selector(
+            'div.body.color-primary-font-color ')
+        assert len(messages) >= abs(number)
+        return messages[number]
+
+    def switch_channel(self, channel_name):
+        channels = self.browser.driver.find_elements_by_css_selector(
             'div.sidebar-item__ellipsis'
         )
+        assert len(channels)
 
-        assert len(general_channel)
+        channel = list(filter(lambda elem: elem.text == channel_name, channels))
+        assert len(channel) == 1
 
-        general_channel[0].click()
+        channel[0].click()
+
+    def choose_general_channel(self):
+        self.switch_channel('general')
 
     def create_user(self):
         options_btn = self.browser.find_by_css(
