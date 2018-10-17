@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2018 Evgeny Golyshev <eugulixes@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,8 @@ if [ -f .env ]; then
     . ./.env
 fi
 
+. ./essentials.sh
+
 set -x
 
 ADDR=${HOST:="http://127.0.0.1:8006"}
@@ -26,6 +28,8 @@ ADDR=${HOST:="http://127.0.0.1:8006"}
 USERNAME=${USERNAME:=""}
 
 PASSWORD=${PASSWORD:=""}
+
+PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 PYTHON=${PYTHON:="python3"}
 
@@ -36,5 +40,58 @@ if [ -z "${PYTHON}" ]; then
     exit 1
 fi
 
-${PYTHON} rc_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}"
+while true; do
+    case "$1" in
+    -s|--scripts)
+        IFS=',' read -ra SCRIPTS <<< $2
+        shift 2
+        ;;
+    *)
+        break
+        ;;
+    esac
+done
+
+RUN=(rc)
+
+if [ "${SCRIPTS}" == "all" ]; then
+    for i in *_tests.py; do
+        test_name="${i%_tests.py}"
+        if [ "${test_name}" != "rc" ]; then
+            RUN+=("${test_name}")
+        fi
+    done
+else
+    for i in "${SCRIPTS[@]}"; do
+        if ! $(check_if_test_exists "${i}"); then
+            fatal "${i}${TEST_SUFFIX} does not exists"
+            exit 1
+        fi
+
+        RUN+=("${i}")
+    done
+fi
+
+info "the following tests are going to be run: ${RUN[@]}"
+
+for i in "${RUN[@]}"; do
+    case "${i}" in
+        # General tests for Rocket.Chat
+        rc)
+            ${PYTHON} rc_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}"
+            ;;
+        # Tests for different scripts
+        happy_birthder_script)
+            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}"
+            ;;
+        pugme_script)
+            ${PYTHON} pugme_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --pugs_limit="${PUGS_LIMIT}"
+            ;;
+        vote_or_die_script)
+            ${PYTHON} vote_or_die_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}"
+            ;;
+        *)
+            ;;
+    esac
+done
 
