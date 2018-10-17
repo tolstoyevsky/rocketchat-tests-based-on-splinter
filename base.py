@@ -24,12 +24,6 @@ from curses import tparm, tigetstr, setupterm
 from splinter import Browser
 from selenium.common.exceptions import StaleElementReferenceException
 
-# for fix error in debug mode
-import os
-import pydevd
-pydevd.settrace('localhost', port=8899)
-os.environ['TERM'] = 'xterm'
-
 
 class OrderedClassMembers(type):
     @classmethod
