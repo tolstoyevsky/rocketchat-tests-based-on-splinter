@@ -38,7 +38,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
 
         self._invalid_dates = ('99.99', '31.09', '30.02')
 
-    def send_vacation_request(self):
+    def _send_vacation_request(self):
         self.send_message('{} хочу в отпуск'.format(self._bot_name))
         assert self.check_latest_response_with_retries(
             'Ok, с какого числа? (дд.мм)')
@@ -47,7 +47,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries(
             'Давай по порядку!\nC какого числа ты хочешь уйти в отпуск? (дд.мм)')
 
-    def input_start_date(self):
+    def _input_start_date(self):
         for date in self._invalid_dates:
             self.send_message('{0} {1}'.format(self._bot_name, date))
             assert self.check_latest_response_with_retries(
@@ -61,7 +61,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self.send_message('{0} {1}'.format(self._bot_name, self._vacation_start_date))
         assert self.check_latest_response_with_retries('Отлично, по какое? (дд.мм)')
 
-    def input_end_date(self):
+    def _input_end_date(self):
         for date in self._invalid_dates:
             self.send_message('{0} {1}'.format(self._bot_name, date))
             assert self.check_latest_response_with_retries(
@@ -76,14 +76,14 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries('Значит ты планируешь находиться в отпуске 14 дней. '
                                                        'Все верно? (да/нет)')
 
-    def confirm_dates(self, confirm=True):
+    def _confirm_dates(self, confirm=True):
         self.send_message('{0} {1}'.format(self._bot_name, 'да' if confirm else 'нет'))
         assert self.check_latest_response_with_retries(
             'Заявка на отпуск отправлена. Ответ поступит не позже чем через 7 дней.'
             if confirm
             else 'Я прервал процесс формирования заявки на отпуск.')
 
-    def approve_vacation(self, is_admin=True):
+    def _approve_vacation(self, is_admin=True):
         self.send_message('{0} одобрить заявку @{1}'.format(self._bot_name, self.username))
         if is_admin:
             assert self.check_latest_response_with_retries(
@@ -92,7 +92,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
             assert self.check_latest_response_with_retries(
                 'У тебя недостаточно прав для этой команды 🙄')
 
-    def reject_vacation(self, is_admin=True):
+    def _reject_vacation(self, is_admin=True):
         self.send_message('{0} отклонить заявку @{1}'.format(self._bot_name, self.username))
         if is_admin:
             assert self.check_latest_response_with_retries(
@@ -101,7 +101,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
             assert self.check_latest_response_with_retries(
                 'У тебя недостаточно прав для этой команды 🙄')
 
-    def cancel_vacation(self, is_admin=True):
+    def _cancel_vacation(self, is_admin=True):
         self.send_message('{0} отменить заявку @{1}'.format(self._bot_name, self.username))
         if is_admin:
             assert self.check_latest_response_with_retries(
@@ -112,27 +112,27 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
 
     def test_viva_las_vegas_with_approve(self):
         self.choose_general_channel()
-        self.send_vacation_request()
-        self.input_start_date()
-        self.input_end_date()
-        self.confirm_dates()
-        self.approve_vacation()
-        self.cancel_vacation()
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._approve_vacation()
+        self._cancel_vacation()
 
     def test_viva_las_vegas_with_reject(self):
-        self.send_vacation_request()
-        self.input_start_date()
-        self.input_end_date()
-        self.confirm_dates()
-        self.reject_vacation()
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._reject_vacation()
 
     def test_approve_notification(self):
         self.choose_general_channel()
-        self.send_vacation_request()
-        self.input_start_date()
-        self.input_end_date()
-        self.confirm_dates()
-        self.approve_vacation()
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._approve_vacation()
 
     def test_reject_notification(self):
         pass
@@ -145,32 +145,32 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self.login(use_test_user=True)
         self.choose_general_channel()
 
-        self.send_vacation_request()
-        self.input_start_date()
-        self.input_end_date()
-        self.confirm_dates()
-        self.approve_vacation(is_admin=False)
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._approve_vacation(is_admin=False)
 
         self.logout()
         self.login()
-        self.approve_vacation()
-        self.cancel_vacation()
+        self._approve_vacation()
+        self._cancel_vacation()
 
     def test_viva_las_vegas_reject_without_permission(self):
         self.logout()
         self.login(use_test_user=True)
         self.choose_general_channel()
 
-        self.send_vacation_request()
-        self.input_start_date()
-        self.input_end_date()
-        self.confirm_dates()
-        self.reject_vacation(is_admin=False)
+        self._send_vacation_request()
+        self._input_start_date()
+        self._input_end_date()
+        self._confirm_dates()
+        self._reject_vacation(is_admin=False)
 
         self.logout()
         self.login()
         self.choose_general_channel()
-        self.reject_vacation()
+        self._reject_vacation()
 
 
 def main():
