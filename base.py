@@ -135,12 +135,14 @@ class RocketChatTestCase(SplinterTestCase):
         SplinterTestCase.__init__(self, addr, **kwargs)
 
         self.schedule_pre_test_case('login')
+        self.schedule_pre_test_case('test_check_version')
 
         if create_test_user:
             self.schedule_pre_test_case('create_user')
 
         self.username = username
         self.password = password
+        self._rc_version = '0.69'
 
         self.test_username = 'noname'
         self.test_full_name = 'No Name'
@@ -274,12 +276,6 @@ class RocketChatTestCase(SplinterTestCase):
 
         save_btn.first.click()
 
-        close_btn = self.find_by_css('button[data-action="close"]')
-
-        assert len(close_btn)
-
-        close_btn.click()
-
     def login(self):
         self.browser.fill('emailOrUsername', self.username)
         self.browser.fill('pass', self.password)
@@ -293,6 +289,36 @@ class RocketChatTestCase(SplinterTestCase):
         welcome_text = self.browser.find_by_text('Welcome to Rocket.Chat!')
 
         assert len(welcome_text)
+
+    def test_check_version(self):
+        options_btn = self.browser.find_by_css(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
+        )
+        assert len(options_btn)
+        options_btn.last.click()
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        assert administration_btn
+        administration_btn.click()
+
+        info_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Info"]')
+
+        assert len(info_btn)
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           info_btn[0])
+
+        info_table = self.browser.find_by_css(".admin-table-row")
+        assert len(info_table)
+        version = '.'.join(info_table.first.text.split()[1].split('.')[0:2])
+        assert version == self._rc_version
+
+        close_btn = self.find_by_css('button[data-action="close"]')
+
+        assert len(close_btn)
+
+        close_btn.click()
 
     def remove_user(self):
         options_btn = self.browser.driver.find_elements_by_css_selector(
