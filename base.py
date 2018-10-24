@@ -40,11 +40,12 @@ class OrderedClassMembers(type):
 
 class SplinterTestCase(metaclass=OrderedClassMembers):
     def __init__(self, addr, browser_window_size=(1920, 1080),
-                 page_load_timeout=30):
+                 page_load_timeout=30, sticky_timeout=30):
         setupterm()
 
         self.browser = Browser('chrome', headless=False, wait_time=30,
                                executable_path='./drivers/chromedriver')
+        self.browser.driver.implicitly_wait(sticky_timeout)
         self.browser.driver.set_page_load_timeout(page_load_timeout)
         self.browser.driver.set_window_size(*browser_window_size)
         self.browser.visit(addr)
