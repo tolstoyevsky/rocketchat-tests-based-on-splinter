@@ -23,6 +23,7 @@ from curses import tparm, tigetstr, setupterm
 
 from splinter import Browser
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.support.wait import WebDriverWait
 
 
 class OrderedClassMembers(type):
@@ -183,19 +184,21 @@ class RocketChatTestCase(SplinterTestCase):
 
         return False
 
-    def choose_general_channel(self):
-        general_channel = self.browser.driver.find_elements_by_css_selector(
+    def switch_channel(self, channel_name):
+        channels = self.browser.driver.find_elements_by_css_selector(
             'div.sidebar-item__ellipsis'
         )
+        assert len(channels)
 
-        assert len(general_channel)
+        channel = list(
+            filter(lambda elem: elem.text == channel_name, channels))
+        assert len(channel) == 1
 
-        self.browser.execute_script(
-            '''
-            var el = document.querySelector('div.sidebar-item__ellipsis');
-            el.click();
-            '''
-        )
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           channel[0])
+
+    def choose_general_channel(self):
+        self.switch_channel('general')
 
     def create_user(self):
         options_btn = self.browser.find_by_css(
@@ -256,7 +259,7 @@ class RocketChatTestCase(SplinterTestCase):
 
         verified_btn.last.click()
 
-        role_option = self.find_by_css('option[value="bot"]')
+        role_option = self.find_by_css('option[value="user"]')
 
         assert len(role_option)
 
@@ -281,9 +284,13 @@ class RocketChatTestCase(SplinterTestCase):
 
         save_btn.first.click()
 
-    def login(self):
-        self.browser.fill('emailOrUsername', self.username)
-        self.browser.fill('pass', self.password)
+    def login(self, use_test_user=False):
+        self.browser.fill('emailOrUsername',
+                          self.test_username
+                          if use_test_user else self.username)
+        self.browser.fill('pass',
+                          self.test_password
+                          if use_test_user else self.password)
 
         login_btn = self.find_by_css('.rc-button.rc-button--primary.login')
 
@@ -294,6 +301,15 @@ class RocketChatTestCase(SplinterTestCase):
         welcome_text = self.browser.find_by_text('Welcome to Rocket.Chat!')
 
         assert len(welcome_text)
+
+    def logout(self):
+        avatar = self.find_by_css('.avatar')
+        assert avatar
+        avatar.click()
+
+        logout_btn = self.find_by_css('.rc-popover__item.js-action')
+        assert logout_btn
+        logout_btn.last.click()
 
     def test_check_version(self):
         options_btn = self.browser.find_by_css(
@@ -324,6 +340,11 @@ class RocketChatTestCase(SplinterTestCase):
         assert len(close_btn)
 
         close_btn.click()
+
+    def _check_modal_window_visibility(self):
+        windows = self.browser.driver.find_elements_by_class_name(
+            'rc-modal__content-text')
+        return not windows
 
     def remove_user(self):
         options_btn = self.browser.driver.find_elements_by_css_selector(
@@ -385,6 +406,9 @@ class RocketChatTestCase(SplinterTestCase):
         assert len(confirm_btn)
 
         confirm_btn.first.click()
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_modal_window_visibility())
 
         close_btn = self.browser.driver.find_elements_by_css_selector(
             'button[data-action="close"]')
