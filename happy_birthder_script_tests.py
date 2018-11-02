@@ -20,6 +20,10 @@ from base import RocketChatTestCase
 
 
 class HappyBirthderScriptTestCase(RocketChatTestCase):
+    """Class to testing of the main functionality of hubot-happy-birthder
+    script.
+    """
+
     def __init__(self, addr, username, password, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
 
@@ -30,6 +34,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self._bot_name = 'meeseeks'
 
     def test_requesting_birthday_set(self):
+        """Test the possibility to add the users birthdays information"""
+
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.test_username,
                                  self._test_user_birthday))
@@ -38,6 +44,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             "Saving {}'s birthday.".format(self.test_username))
 
     def test_requesting_birthdays_on(self):
+        """Test the request of users birthdays in the specified date"""
+
         day_month = self._test_user_birthday[:-5]
 
         self.send_message('{} birthdays on {}'.
@@ -47,6 +55,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             '@{}'.format(self.test_username))
 
     def test_requesting_birthdays_delete(self):
+        """Test the deleting of users date of birthday"""
+
         self.send_message('{} birthday delete {}'.
                           format(self._bot_name, self.test_username))
 
