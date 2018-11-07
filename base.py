@@ -190,7 +190,12 @@ class RocketChatTestCase(SplinterTestCase):
 
         assert len(general_channel)
 
-        general_channel[0].click()
+        self.browser.execute_script(
+            '''
+            var el = document.querySelector('div.sidebar-item__ellipsis');
+            el.click();
+            '''
+        )
 
     def create_user(self):
         options_btn = self.browser.find_by_css(
