@@ -11,6 +11,19 @@ The set of tests includes:
   * [hubot-pugme](https://github.com/tolstoyevsky/hubot-pugme)
   * [hubot-vote-or-die](https://github.com/tolstoyevsky/hubot-vote-or-die)
 
+## Prerequisites
+
+Some of the general Rocket.Chat tests are related to the clipboard, so install xclip.
+On Debian or Ubuntu:
+```
+$ sudo apt-get install xclip
+```
+
+On Fedora:
+```
+$ sudo dnf install xclip
+```
+
 ## Getting started
 
 Clone the git repository and install the dependencies:
