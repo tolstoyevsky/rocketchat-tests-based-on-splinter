@@ -143,7 +143,7 @@ class RocketChatTestCase(SplinterTestCase):
 
         self.username = username
         self.password = password
-        self._rc_version = '0.69'
+        self._rc_version = '0.70'
 
         self.test_username = 'noname'
         self.test_full_name = 'No Name'
