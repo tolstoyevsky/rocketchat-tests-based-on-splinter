@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 from optparse import OptionParser
 
 from base import RocketChatTestCase
@@ -24,6 +26,17 @@ class VoteOrDieScriptTestCase(RocketChatTestCase):
 
         self.schedule_pre_test_case('choose_general_channel')
 
+    def _wait_value(self, css_selector, position, expected_value, retries=30):
+        for i in range(retries):
+            elem_list = self.find_by_css(css_selector)
+            assert len(elem_list)
+
+            elem = elem_list[position]
+            if elem.value == expected_value:
+                return True
+            time.sleep(1)
+        return False
+
     def test_creating_poll_with_1_option(self):
         self.send_message('!poll question?, option 1')
 
@@ -34,6 +47,14 @@ class VoteOrDieScriptTestCase(RocketChatTestCase):
 
         assert self.check_latest_response_with_retries(
             '_Please vote using reactions_\nquestion?\n0⃣ option 1\n1⃣ option 2')
+
+    def test_creating_poll_with_3_options_and_check_related_emojis(self):
+        self.send_message('!poll question?, option 1, option 2, option 3')
+
+        assert self.check_latest_response_with_retries(
+            '_Please vote using reactions_\nquestion?\n0⃣ option 1\n1⃣ option 2\n2⃣ option 3')
+
+        assert self._wait_value('.reactions ', -1, '0⃣ 1 1⃣ 1 2⃣ 1')
 
     def test_creating_poll_with_over_12_options(self):
         self.send_message(
