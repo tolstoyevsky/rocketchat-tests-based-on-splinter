@@ -90,6 +90,10 @@ All the parameters mentioned below are **mandatory**, so don't forget to provide
   </tr>
 </table>
 
+## Authors
+
+See [AUTHORS](AUTHORS.md).
+
 ## Licensing
 
 rocketchat-tests-based-on-splinter is available under the [Apache License, Version 2.0](LICENSE).
