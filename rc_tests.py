@@ -43,6 +43,8 @@ class GeneralTestCase(RocketChatTestCase):
         self._read_only_channel_name = '{}_{}'.format(
             'read_only_test_channel', uuid.uuid4())
 
+        self._non_unique_channel_name = 'test_channel'
+
         self.schedule_test_case('_delete_channels')
 
     def _delete_channels(self):
@@ -502,6 +504,173 @@ class GeneralTestCase(RocketChatTestCase):
 
         self.logout()
         self.login()
+
+    # TODO: change the test when https://github.com/RocketChat/Rocket.Chat/issues/12059 is closed.
+    def test_recreating_channel_with_same_name(self):
+        #  create
+        create_channel_btn = self.browser.find_by_css(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert len(create_channel_btn) >= 2
+
+        create_channel_btn[-2].click()
+
+        channel_options = self.find_by_css('label.rc-switch__label')
+
+        assert len(channel_options) >= 3
+
+        channel_options.first.click()
+
+        channel_name = self.browser.find_by_name('name')
+
+        assert len(channel_name)
+
+        channel_name.first.fill(self._non_unique_channel_name)
+
+        create_btn = self.find_by_css('.rc-button.rc-button--primary')
+
+        assert len(create_btn)
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_elem_disabled_state(create_btn))
+
+        create_btn.first.click()
+        #  delete
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert len(options_btn)
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        rooms_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Rooms"]')
+
+        assert len(rooms_btn)
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           rooms_btn[0])
+
+        selected_room = self.browser.find_by_xpath(
+            '//td[@class="border-component-color"][text()="{0}"]'.format(
+                self._non_unique_channel_name))
+
+        assert len(selected_room)
+
+        selected_room.click()
+
+        delete_btn = self.browser.driver.find_element_by_class_name('button')
+
+        assert delete_btn
+
+        delete_btn.click()
+
+        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
+
+        assert len(confirm_btn)
+
+        confirm_btn.first.click()
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_modal_window_visibility())
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert len(close_btn)
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+        #  create
+        create_channel_btn = self.browser.find_by_css(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert len(create_channel_btn) >= 2
+
+        create_channel_btn[-2].click()
+
+        channel_options = self.find_by_css('label.rc-switch__label')
+
+        assert len(channel_options) >= 3
+
+        channel_options.first.click()
+
+        channel_name = self.browser.find_by_name('name')
+
+        assert len(channel_name)
+
+        channel_name.first.fill(self._non_unique_channel_name)
+
+        create_btn = self.find_by_css('.rc-button.rc-button--primary')
+
+        assert len(create_btn)
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_elem_disabled_state(create_btn))
+
+        create_btn.first.click()
+
+        msg_box = self.find_by_css('.rc-message-box.rc-new')
+        assert len(msg_box)
+        #  check non correct behavior
+        assert msg_box.first.text == \
+               'You are in preview mode of channel #{} JOIN'.format(
+                   self._non_unique_channel_name)
+        pass
+        #  delete
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert len(options_btn)
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        rooms_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Rooms"]')
+
+        assert len(rooms_btn)
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           rooms_btn[0])
+
+        selected_room = self.browser.find_by_xpath(
+            '//td[@class="border-component-color"][text()="{0}"]'.format(
+                self._non_unique_channel_name))
+
+        assert len(selected_room)
+
+        selected_room.click()
+
+        delete_btn = self.browser.driver.find_element_by_class_name('button')
+
+        assert delete_btn
+
+        delete_btn.click()
+
+        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
+
+        assert len(confirm_btn)
+
+        confirm_btn.first.click()
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_modal_window_visibility())
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert len(close_btn)
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
 
     def test_pasting_string_from_clipboard(self):
         self.choose_general_channel()
