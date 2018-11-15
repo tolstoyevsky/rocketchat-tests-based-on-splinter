@@ -24,7 +24,19 @@ On Fedora:
 $ sudo dnf install xclip
 ```
 
-## Getting started
+## Installation
+
+### Docker
+
+Clone the git repository and build the Docker image:
+
+```
+git clone https://github.com/tolstoyevsky/rocketchat-tests-based-on-splinter.git
+cd  rocketchat-tests-based-on-splinter/docker
+make
+```
+
+### Manual
 
 Clone the git repository and install the dependencies:
 
@@ -34,11 +46,15 @@ cd  rocketchat-tests-based-on-splinter
 pip3 install -r requirements.txt
 ```
 
-Then, you have the following options:
+## Getting started
+
+The following examples are based on the `run_tests.sh` script. You can use `run_tests_in_container.sh` instead if you want to run the tests in the Docker container. Don't forget to build the Docker image as described in [this section](#docker).
+
+Now you have the following options:
 * run only the general Rocket.Chat tests;
 * run the general Rocket.Chat tests with either all the available Hubot scripts tests (see [Features](#features)) or only with specified ones.
 
-For example, to run only the general Rocket.Chat tests, execute
+To run only the general Rocket.Chat tests, go to the root of the project and execute
 
 ```
 ./run_tests.sh
@@ -76,7 +92,12 @@ All the parameters mentioned below are **mandatory**, so don't forget to provide
   <tr>
     <td>ADDR</td>
     <td>Domain or IP of the Rocket.Chat host.</td>
-    <td>http://127.0.0.1:8006</td>
+    <td>127.0.0.1</td>
+  </tr>
+  <tr>
+    <td>PORT</td>
+    <td>Port the Rocket.Chat server listens on.</td>
+    <td>8006</td>
   </tr>
   <tr>
     <td>USERNAME</td>
