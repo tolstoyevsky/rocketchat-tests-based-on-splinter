@@ -20,10 +20,13 @@ import sys
 import time
 import traceback
 from curses import tparm, tigetstr, setupterm
+from xvfbwrapper import Xvfb
+import requests
 
 import requests
 from rocketchat_API.rocketchat import RocketChat
 from splinter import Browser
+from splinter.driver.webdriver.chrome import Options
 from selenium.common.exceptions import (
     NoSuchWindowException,
     StaleElementReferenceException,
@@ -50,7 +53,15 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
                  page_load_timeout=30, sticky_timeout=30):
         setupterm()
 
-        self.browser = Browser('chrome', headless=False, wait_time=30,
+        self.addr = addr
+
+        # xvfb wrapper starting
+        self.xvfb = Xvfb()
+        self.xvfb.start()
+
+        options = Options()
+        options.add_argument('--no-sandbox')
+        self.browser = Browser('chrome', headless=False, options=options, wait_time=30,
                                executable_path='./drivers/chromedriver')
         self.browser.driver.implicitly_wait(sticky_timeout)
         self.browser.driver.set_page_load_timeout(page_load_timeout)
@@ -144,6 +155,23 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
     def run(self):
         try:
+            # Waiting for rocketchat
+            print('Connecting to RocketChat', end='... ', flush=True)
+            connect = False
+            for _ in range(30):
+                try:
+                    r = requests.get(self.addr, timeout=60)
+                    if r.status_code == 200:
+                        connect = True
+                        break
+                except requests.RequestException:
+                    time.sleep(1)
+            if connect:
+                print('OK')
+            else:
+                raise ConnectionError
+
+            # Running tests
             self._run()
 
         except KeyboardInterrupt:
@@ -151,6 +179,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
             
         except (NoSuchWindowException, WebDriverException):
             print('\nThe process was stopped, because the browser was closed.')
+        
+        except ConnectionError:
+            print('Failed to connect')
 
         except requests.ConnectionError:
             print('\nThe internet connection was lost')
@@ -160,6 +191,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
                 method = getattr(self, post_test_case)
                 print('Running clean up {}...'.format(post_test_case))
                 method()
+            self.xvfb.stop()
 
 
 class RocketChatTestCase(SplinterTestCase):

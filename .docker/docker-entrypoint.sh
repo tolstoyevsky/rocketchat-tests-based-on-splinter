@@ -19,8 +19,6 @@ if [ -f .env ]; then
     . ./.env
 fi
 
-. ./essentials.sh
-
 set -x
 
 ADDR=${HOST:="http://127.0.0.1:8006"}
@@ -35,24 +33,23 @@ PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 PYTHON=${PYTHON:="python3"}
 
+SCRIPTS=${SCRIPTS='all'}
+
+BRANCH=${BRANCH:='master'}
+
 set +x
 
-if [ -z "${PYTHON}" ]; then
-    >&2 echo "Python interpreter is not specified"
-    exit 1
+if [ -d ./rocketchat-tests-based-on-splinter ]; then
+    rm -rf rocketchat-tests-based-on-splinter
 fi
 
-while true; do
-    case "$1" in
-    -s|--scripts)
-        IFS=',' read -ra SCRIPTS <<< $2
-        shift 2
-        ;;
-    *)
-        break
-        ;;
-    esac
-done
+git clone --branch $BRANCH https://github.com/tolstoyevsky/rocketchat-tests-based-on-splinter
+
+cd rocketchat-tests-based-on-splinter
+
+pip install -r requirements.txt
+
+. ./essentials.sh
 
 RUN=(rc)
 
@@ -65,11 +62,6 @@ if [ "${SCRIPTS}" == "all" ]; then
     done
 else
     for i in "${SCRIPTS[@]}"; do
-        if ! $(check_if_test_exists "${i}"); then
-            fatal "${i}${TEST_SUFFIX} does not exists"
-            exit 1
-        fi
-
         RUN+=("${i}")
     done
 fi
