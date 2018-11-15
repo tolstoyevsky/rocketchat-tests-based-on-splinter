@@ -29,6 +29,8 @@ USERNAME=${USERNAME:=""}
 
 PASSWORD=${PASSWORD:=""}
 
+WAIT=${WAIT:='80'}
+
 PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 PYTHON=${PYTHON:="python3"}
@@ -82,7 +84,7 @@ for i in "${RUN[@]}"; do
             ;;
         # Tests for different scripts
         happy_birthder_script)
-            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}"
+            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}"
             ;;
         pugme_script)
             ${PYTHON} pugme_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --pugs_limit="${PUGS_LIMIT}"

@@ -101,6 +101,42 @@ All the parameters mentioned below are **mandatory**, so don't forget to provide
     <td>Maximum number of pugs.</td>
     <td>5</td>
   </tr>
+  <tr>
+    <td align="center" colspan="3"><b>hubot-happy-birthder</b></td>
+  </td>
+  <tr>
+    <td>WAIT</td>
+    <td>Amount in second which test script is waiting for hubot reaction.</td>
+    <td>100</td>
+  </tr>
+</table>
+
+Note that the tests are very sensible to:
+- the condition of the database. It's recommended to have as compact database as possible to run the Hubot scripts.
+- the local configuration of the Hubot scripts you want to test and especially to the timers. We provide some recommended configuration of them to make the tests run:
+
+<table>
+  <tr>
+    <th align="center">Parameter</th>
+    <th align="center">Recommended value</th>
+  </tr>
+  <tr>
+    <th align="center" colspan="3">hubot-happy-birthder</th>
+  </tr>
+  <tr>
+    <th align="center" colspan="3">Ensure that the most of the parameters are set to default values. See the description for all the parameters related to the script in its original [README](https://github.com/tolstoyevsky/hubot-happy-birthder/blob/master/README.md).</th>
+  </tr>
+  <tr>
+    <td colspan="3"><i>Ensure that the most of the parameters are set to default values. See the description for all the parameters related to the script in its original <a href="https://github.com/tolstoyevsky/hubot-happy-birthder/blob/master/README.md">README</a>.</i></td>
+  </tr>
+  <tr>
+    <td>HAPPY_REMINDER_SCHEDULER</td>
+    <td>/1 * * * * *</td>
+  </tr>
+  <tr>
+    <td>CREATE_BIRTHDAY_CHANNELS</td>
+    <td>true</td>
+  </tr>
 </table>
 
 ## Authors
