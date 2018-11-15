@@ -77,7 +77,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries(
             '@{}'.format(self.username))
 
-    def test_admins_birthday_delete(self):
+    def test_invoking_birthday_delete_by_admin(self):
         self.send_message('{} birthday delete {}'.
                           format(self._bot_name, self.username))
 
@@ -85,7 +85,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             "Removing {}'s birthday.".format(self.username))
 
     #  tests set for requesting birthdays set
-    def test_requesting_birthday_set_for_admin(self):
+    def test_specifying_date_birth_by_admin(self):
         self.switch_channel(self._bot_name)
         assert self.check_latest_response_with_retries(
             'Hmm...\n'
@@ -97,7 +97,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             'I memorized you birthday, well done! 😉'
         )
 
-    def test_requesting_birthday_set_for_freshman(self):
+    def test_specifying_date_birth_by_new_user(self):
         self.create_user()
         close_btn = self.find_by_css('button[data-action="close"]')
         assert len(close_btn)
@@ -127,7 +127,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.login()
 
     #  tests set for birthday channels and notifications
-    def test_creating_of_birthday_channel(self):
+    def test_creating_birthday_channel(self):
         self.choose_general_channel()
         test_date = self._get_date_with_shift(7)
         self.send_message('{} birthday set {} {}'.
@@ -157,7 +157,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             .format(self.test_username)
         )
 
-    def test_checking_lack_of_test_user_in_channel(self):
+    def test_checking_absence_of_test_user_in_channel(self):
         channel_options = self.find_by_css(
             ".rc-room-actions__action.tab-button.js-action")
 
@@ -172,14 +172,14 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         assert all([member.text != self.test_username
                     for member in members_list])
 
-    def test_birthday_notifications_from_bot_7_days_before(self):
+    def test_reminder_of_upcoming_birthday_7_days_in_advance(self):
         self.switch_channel(self._bot_name)
         assert self.check_latest_response_with_retries(
             '@{} is having a birthday on {}.'
             .format(self.test_username, self._get_date_with_shift(7)[:-5])
         )
 
-    def test_birthday_notifications_from_bot_1_day_before(self):
+    def test_reminder_of_upcoming_birthday_1_days_in_advance(self):
         self.choose_general_channel()
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.test_username,
@@ -190,7 +190,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             attempts_number=self._reminder_interval_time
         )
 
-    def test_deleting_of_birthday_chanel(self):
+    def test_deleting_birthday_channel(self):
         self.choose_general_channel()
         test_date = self._get_date_with_shift(-3)
         self.send_message('{} birthday set {} {}'.
@@ -213,7 +213,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     #  tests set for birthdays congratulation
 
-    def test_birthdays_congratulation(self):
+    def test_birthday_message(self):
         self.choose_general_channel()
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.username,
@@ -232,7 +232,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.send_message('{} birthdays list'.format(self._bot_name))
         assert self.check_latest_response_with_retries('Oops... No results.')
 
-    def test_birthdays_list_command_with_1_birthday(self):
+
+    def test_invoking_birthdays_list_with_1_birth_date(self):
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.username,
                                  self._test_birthday))
@@ -242,7 +243,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             '*Birthdays list*\n@{} was born on {}'.format(self.username,
                                                           self._test_birthday))
 
-    def test_birthdays_list_command_with_2_birthdays_and_check_order(self):
+    # Test check the order in the list
+    def test_invoking_birthdays_list_with_2_birth_dates(self):
         self.choose_general_channel()
         admins_birthday = self._get_date_with_shift(25)
         self.send_message('{} birthday set {} {}'.
@@ -262,7 +264,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                     self.username, admins_birthday))
 
     #  test set for blacklist
-    def test_for_birthday_channel_blacklist(self):
+    def test_birthday_channel_blacklist(self):
         #  create user for blacklist
         options_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
@@ -469,10 +471,11 @@ def main():
     parser.add_option('-w', '--wait', dest='wait',
                       help='allows specifying time '
                            'for waiting reminder\'s work(secs)')
-    options, args = parser.parse_args()
+
+    options, _ = parser.parse_args()
 
     if not options.host:
-        parser.error('Host is not specified')
+        options.host = 'http://127.0.0.1:8006'
 
     if not options.username:
         parser.error('Username is not specified')
@@ -481,7 +484,7 @@ def main():
         parser.error('Password is not specified')
 
     if not options.wait:
-        parser.error('Wait time is not specified')
+        options.wait = '100'
 
     test_cases = HappyBirthderScriptTestCase(options.host, options.username,
                                              options.password,
