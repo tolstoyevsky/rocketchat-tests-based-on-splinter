@@ -23,7 +23,9 @@ fi
 
 set -x
 
-ADDR=${HOST:="http://127.0.0.1:8006"}
+ADDR=${ADDR:="127.0.0.1"}
+
+PORT=${PORT:=8006}
 
 USERNAME=${USERNAME:=""}
 
@@ -34,6 +36,8 @@ WAIT=${WAIT:='80'}
 PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 PYTHON=${PYTHON:="python3"}
+
+HOST="http://${ADDR}:${PORT}"
 
 set +x
 

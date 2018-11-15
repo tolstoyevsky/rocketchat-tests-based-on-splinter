@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import collections
+import os.path
 import re
 import sys
 import time
@@ -24,12 +25,14 @@ from curses import tparm, tigetstr, setupterm
 import requests
 from rocketchat_API.rocketchat import RocketChat
 from splinter import Browser
+from splinter.driver.webdriver.chrome import Options
 from selenium.common.exceptions import (
     NoSuchWindowException,
     StaleElementReferenceException,
     WebDriverException
 )
 from selenium.webdriver.support.wait import WebDriverWait
+from xvfbwrapper import Xvfb
 
 
 class OrderedClassMembers(type):
@@ -50,7 +53,15 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
                  page_load_timeout=30, sticky_timeout=30):
         setupterm()
 
-        self.browser = Browser('chrome', headless=False, wait_time=30,
+        if os.path.isfile('/.docker'):
+            # xvfb wrapper starting
+            print('Using Xvfb')
+            self.xvfb = Xvfb()
+            self.xvfb.start()
+
+        options = Options()
+        options.add_argument('--no-sandbox')
+        self.browser = Browser('chrome', headless=False, options=options, wait_time=30,
                                executable_path='./drivers/chromedriver')
         self.browser.driver.implicitly_wait(sticky_timeout)
         self.browser.driver.set_page_load_timeout(page_load_timeout)
@@ -150,7 +161,10 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
             print('\nThe process was stopped by pressing Ctrl+C.')
             
         except (NoSuchWindowException, WebDriverException):
-            print('\nThe process was stopped, because the browser was closed.')
+            print('\nThe process was stopped because the web driver exception has occurred.')
+        
+        except ConnectionError:
+            print('\nFailed to connect.')
 
         except requests.ConnectionError:
             print('\nThe internet connection was lost')
@@ -160,6 +174,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
                 method = getattr(self, post_test_case)
                 print('Running clean up {}...'.format(post_test_case))
                 method()
+
+            if os.path.isfile('/.docker'):
+                self.xvfb.stop()
 
 
 class RocketChatTestCase(SplinterTestCase):
