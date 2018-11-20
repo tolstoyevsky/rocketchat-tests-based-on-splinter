@@ -311,6 +311,21 @@ class RocketChatTestCase(SplinterTestCase):
         assert logout_btn
         logout_btn.last.click()
 
+    def _get_rc_version_with_retries(self, attempts_number=60):
+        for _ in range(attempts_number):
+            info_table = self.browser.find_by_css(".admin-table-row")
+
+            assert len(info_table)
+
+            version_row = info_table.first.text
+            try:
+                version = '.'.join(version_row.split()[1].split('.')[0:2])
+                return version
+            except IndexError:
+                time.sleep(1)
+                continue
+        return ''
+
     def test_check_version(self):
         options_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
@@ -330,9 +345,10 @@ class RocketChatTestCase(SplinterTestCase):
         self.browser.driver.execute_script("arguments[0].click();",
                                            info_btn[0])
 
-        info_table = self.browser.find_by_css(".admin-table-row")
-        assert len(info_table)
-        version = '.'.join(info_table.first.text.split()[1].split('.')[0:2])
+        version = self._get_rc_version_with_retries()
+
+        assert version
+
         assert version == self._rc_version
 
         close_btn = self.find_by_css('button[data-action="close"]')
