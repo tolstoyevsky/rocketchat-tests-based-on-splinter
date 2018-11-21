@@ -175,6 +175,124 @@ class GeneralTestCase(RocketChatTestCase):
         self.browser.back()
         self.choose_general_channel()
 
+    def test_starring_messages(self):
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_hiding_toast_message())
+        search_btn = self.browser.find_by_css(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
+        )
+
+        assert len(search_btn)
+
+        search_btn.first.click()
+
+        search = self.browser.find_by_css('.rc-input__element')
+
+        assert len(search)
+
+        search.first.fill(self.username)
+
+        chanels = self.browser.find_by_css('.sidebar-item.popup-item')
+
+        assert len(chanels)
+
+        chanels.first.click()
+
+        self.send_message(self._test_string)
+
+        test_message = self.find_by_css(
+            'div.body.color-primary-font-color ')
+
+        assert len(test_message)
+
+        test_message.last.mouse_over()
+        actions_menu = self.find_by_css('.message-actions__menu')
+
+        assert len(actions_menu)
+
+        actions_menu.last.click()
+
+        menu_items = self.find_by_css('.rc-popover__item')
+
+        assert len(menu_items) == 8
+
+        assert menu_items[5].text == 'Star Message'
+
+        menu_items[5].click()
+
+        room_menu = self.find_by_css('.rc-room-actions__action')
+
+        assert len(room_menu)
+
+        room_menu.last.click()
+
+        starred_messages = self.find_by_css('.rc-popover__item.js-action')
+
+        assert len(starred_messages)
+
+        starred_messages.first.click()
+
+        starred_message = self.find_by_css(
+            '.message.background-transparent-dark-hover.own.starred.new-day')
+
+        assert len(starred_message)
+
+        assert starred_message.first.text.split('\n')[1] == self._test_string
+
+        close_button = self.find_by_css(
+            '.contextual-bar__header-close.js-close')
+
+        assert len(close_button)
+
+        close_button.first.click()
+
+    def test_unstarring_messages(self):
+        test_message = self.find_by_css(
+            'div.body.color-primary-font-color ')
+
+        assert len(test_message)
+
+        test_message.last.mouse_over()
+        actions_menu = self.find_by_css('.message-actions__menu')
+
+        assert len(actions_menu)
+
+        actions_menu.last.click()
+
+        menu_items = self.find_by_css('.rc-popover__item')
+
+        assert len(menu_items) == 8
+
+        assert menu_items[5].text == 'Remove Star'
+
+        menu_items[5].click()
+
+        room_menu = self.find_by_css('.rc-room-actions__action')
+
+        assert len(room_menu)
+
+        room_menu.last.click()
+
+        starred_messages = self.find_by_css('.rc-popover__item.js-action')
+
+        assert len(starred_messages)
+
+        starred_messages.first.click()
+
+        starred_messages_list = self.find_by_css(
+            '.list-view.starred-messages-list.flex-tab__header')
+
+        assert len(starred_messages_list)
+
+        assert starred_messages_list.first.text == 'No starred messages'
+
+        close_button = self.find_by_css(
+            '.contextual-bar__header-close.js-close')
+
+        assert len(close_button)
+
+        close_button.first.click()
+
     def test_creating_public_channel(self):
         create_channel_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
