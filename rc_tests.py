@@ -293,6 +293,117 @@ class GeneralTestCase(RocketChatTestCase):
 
         close_button.first.click()
 
+    def test_for_pinning_messages(self):
+        self.choose_general_channel()
+        self.send_message(self._test_string)
+        test_message = self.find_by_css(
+            'div.body.color-primary-font-color ')
+
+        assert len(test_message)
+
+        test_message.last.mouse_over()
+        actions_menu = self.find_by_css('.message-actions__menu')
+
+        assert len(actions_menu)
+
+        actions_menu.last.click()
+        menu_items = self.find_by_css('.rc-popover__item')
+
+        assert len(menu_items) == 8
+
+        assert menu_items[6].text == 'Pin Message'
+
+        menu_items[6].click()
+        assert self.check_latest_response_with_retries(
+            'Pinned a message:[w+]*', match=True)
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_hiding_toast_message())
+
+        room_menu = self.find_by_css('.rc-room-actions__action')
+
+        assert len(room_menu)
+
+        room_menu.last.click()
+        pinned_messages = self.find_by_css('.rc-popover__item.js-action')
+
+        assert len(pinned_messages)
+
+        pinned_messages[5].click()
+        pinned_message = self.find_by_css(
+            '.message.background-transparent-dark-hover.own.pinned.new-day')
+
+        assert len(pinned_message)
+
+        assert pinned_message.last.text.split('\n')[1] == self._test_string
+
+        close_button = self.find_by_css(
+            '.contextual-bar__header-close.js-close')
+
+        assert len(close_button)
+
+        close_button.first.click()
+
+    def test_visibility_of_pinned_message(self):
+        self.logout()
+        self.login(use_test_user=True)
+        self.choose_general_channel()
+        room_menu = self.find_by_css('.rc-room-actions__action')
+
+        assert len(room_menu)
+
+        room_menu.last.click()
+        pinned_messages = self.find_by_css('.rc-popover__item.js-action')
+
+        assert len(pinned_messages)
+
+        pinned_messages[3].click()
+        pinned_message = self.find_by_css(
+            '.message.background-transparent-dark-hover.pinned.new-day')
+
+        assert len(pinned_message)
+
+        assert pinned_message.last.text.split('\n')[1] == self._test_string
+
+        close_button = self.find_by_css(
+            '.contextual-bar__header-close.js-close')
+
+        assert len(close_button)
+
+        close_button.first.click()
+
+    def test_for_unpinning_messages(self):
+        self.logout()
+        self.login()
+        self.choose_general_channel()
+
+        room_menu = self.find_by_css('.rc-room-actions__action')
+
+        assert len(room_menu)
+
+        room_menu.last.click()
+        pinned_messages = self.find_by_css('.rc-popover__item.js-action')
+
+        assert len(pinned_messages)
+
+        pinned_messages[5].click()
+        pinned_message = self.find_by_css(
+            '.message.background-transparent-dark-hover.own.pinned.new-day')
+
+        assert len(pinned_message)
+
+        pinned_message.last.mouse_over()
+        actions_menu = self.find_by_css('.message-actions__menu')
+
+        assert len(actions_menu)
+
+        actions_menu.last.click()
+        menu_items = self.find_by_css('.rc-popover__item')
+
+        assert len(menu_items)
+
+        menu_items[0].click()
+
     def test_creating_public_channel(self):
         create_channel_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
