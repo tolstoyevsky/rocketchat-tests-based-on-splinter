@@ -98,7 +98,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         start_time = time.time()
         for test_case in self._pre_test_cases + self._test_cases:
             method = getattr(self, test_case)
-            print('Running {}...'.format(test_case), end=' ')
+            print('Running {}...'.format(test_case), end=' ', flush=True)
 
             try:
                 method()
