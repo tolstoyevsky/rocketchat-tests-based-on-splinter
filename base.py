@@ -22,7 +22,11 @@ import traceback
 from curses import tparm, tigetstr, setupterm
 
 from splinter import Browser
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import (
+    NoSuchWindowException,
+    StaleElementReferenceException,
+    WebDriverException
+)
 from selenium.webdriver.support.wait import WebDriverWait
 
 
@@ -60,6 +64,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
         self._pre_test_cases = []
         self._test_cases = []
+        self._post_test_cases = []
         for method in self.__ordered__:
             if method.startswith('test_'):
                 self._test_cases.append(method)
@@ -89,14 +94,19 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
     def schedule_test_case(self, test_case_name):
         self._test_cases.append(test_case_name)
 
-    def run(self):
+    def schedule_post_test_case(self, test_case_name):
+        self._post_test_cases.append(test_case_name)
+
+    def _run(self):
         if not self._test_cases:
             print('There is nothing to run since the number of test cases is '
                   '0.')
             return
 
         start_time = time.time()
-        for test_case in self._pre_test_cases + self._test_cases:
+        for test_case in self._pre_test_cases + \
+                         self._test_cases + \
+                         self._post_test_cases:
             method = getattr(self, test_case)
             print('Running {}...'.format(test_case), end=' ', flush=True)
 
@@ -128,6 +138,23 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         self._color_in_green('Succeeded')
 
         return True
+
+
+    def run(self):
+        try:
+            self._run()
+
+        except KeyboardInterrupt:
+            print('\nThe process was stopped by pressing Ctrl+C.')
+            
+        except (NoSuchWindowException, WebDriverException):
+            print('\nThe process was stopped, because the browser was closed.')
+
+        finally:
+            for post_test_case in self._post_test_cases:
+                method = getattr(self, post_test_case)
+                print('Running clean up {}...'.format(post_test_case))
+                method()
 
 
 class RocketChatTestCase(SplinterTestCase):
