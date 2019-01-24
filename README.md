@@ -124,10 +124,7 @@ Note that the tests are very sensible to:
     <th align="center" colspan="3">hubot-happy-birthder</th>
   </tr>
   <tr>
-    <th align="center" colspan="3">Ensure that the most of the parameters are set to default values. See the description for all the parameters related to the script in its original [README](https://github.com/tolstoyevsky/hubot-happy-birthder/blob/master/README.md).</th>
-  </tr>
-  <tr>
-    <td colspan="3"><i>Ensure that the most of the parameters are set to default values. See the description for all the parameters related to the script in its original <a href="https://github.com/tolstoyevsky/hubot-happy-birthder/blob/master/README.md">README</a>.</i></td>
+    <td colspan="3">Ensure that the most of the hubot-happy-birthder parameters are set to default values. See the description for all the parameters related to the script in its original <a href="https://github.com/tolstoyevsky/hubot-happy-birthder/blob/master/README.md">README</a>.</td>
   </tr>
   <tr>
     <td>HAPPY_REMINDER_SCHEDULER</td>
