@@ -67,7 +67,7 @@ class VoteOrDieScriptTestCase(RocketChatTestCase):
 def main():
     parser = OptionParser(usage='usage: %prog [options] arguments')
     parser.add_option('-a', '--host', dest='host',
-                      help='allows specifying admin username')
+                      help='allows specifying domain or IP of the Rocket.Chat host')
     parser.add_option('-u', '--username', dest='username',
                       help='allows specifying admin username')
     parser.add_option('-p', '--password', dest='password',
