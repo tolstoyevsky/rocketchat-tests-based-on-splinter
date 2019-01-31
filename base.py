@@ -21,6 +21,8 @@ import time
 import traceback
 from curses import tparm, tigetstr, setupterm
 
+import requests
+from rocketchat_API.rocketchat import RocketChat
 from splinter import Browser
 from selenium.common.exceptions import (
     NoSuchWindowException,
@@ -150,6 +152,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         except (NoSuchWindowException, WebDriverException):
             print('\nThe process was stopped, because the browser was closed.')
 
+        except requests.ConnectionError:
+            print('\nThe internet connection was lost')
+
         finally:
             for post_test_case in self._post_test_cases:
                 method = getattr(self, post_test_case)
@@ -161,6 +166,8 @@ class RocketChatTestCase(SplinterTestCase):
     def __init__(self, addr, username, password, create_test_user=True,
                  **kwargs):
         SplinterTestCase.__init__(self, addr, **kwargs)
+
+        self.rocket = RocketChat(username, password, server_url=addr)
 
         self.schedule_pre_test_case('login')
         self.schedule_pre_test_case('test_check_version')
@@ -227,7 +234,54 @@ class RocketChatTestCase(SplinterTestCase):
     def choose_general_channel(self):
         self.switch_channel('general')
 
+    def check_with_retries(self, func, *args, expected_res=True, attemps_num=30):
+        for i in range(attemps_num):
+            res = func(*args)
+
+            if res == expected_res:
+                break
+            else:
+                continue
+
+        return res
+
+    def does_username_exist(self, username):
+        response = self.rocket.users_list().json()
+
+        result = [
+            i.get('username', None) for i in response['users']
+            if i.get('username', None) == username
+        ]
+
+        return result != []
+
+    def does_email_exist(self, email):
+        response = self.rocket.users_list().json()
+
+        emails = []
+        for i in response['users']:
+            emails += i.get('emails', [])
+
+        result = [i['address'] for i in emails if i['address'] == email]
+
+        return result != []
+
+
     def create_user(self):
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username,
+            expected_res=False
+        )
+        assert not does_username_exist
+
+        does_email_exist = self.check_with_retries(
+            self.does_email_exist,
+            self.test_email,
+            expected_res=False
+        )
+        assert not does_email_exist
+
         options_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
         )
@@ -311,6 +365,12 @@ class RocketChatTestCase(SplinterTestCase):
 
         save_btn.first.click()
 
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username
+        )
+        assert does_username_exist
+
     def login(self, use_test_user=False):
         self.browser.fill('emailOrUsername',
                           self.test_username
@@ -390,6 +450,12 @@ class RocketChatTestCase(SplinterTestCase):
         return not windows
 
     def remove_user(self):
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username
+        )
+        assert does_username_exist
+
         options_btn = self.browser.driver.find_elements_by_css_selector(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
 
@@ -460,6 +526,13 @@ class RocketChatTestCase(SplinterTestCase):
 
         self.browser.driver.execute_script('arguments[0].click();',
                                            close_btn[0])
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username,
+            expected_res=False
+        )
+        assert not does_username_exist
 
     def send_message(self, message_text):
         self.browser.fill('msg', message_text)
