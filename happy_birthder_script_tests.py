@@ -99,10 +99,6 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     def test_specifying_date_birth_by_new_user(self):
         self.create_user()
-        close_btn = self.find_by_css('button[data-action="close"]')
-        assert len(close_btn)
-        
-        close_btn.click()
         self.logout()
         self.login(use_test_user=True)
         self._wait_reminder()
@@ -489,7 +485,7 @@ def main():
     test_cases = HappyBirthderScriptTestCase(options.host, options.username,
                                              options.password,
                                              reminder_interval_time=options.wait,
-                                             create_test_user=False)
+                                             )
     test_cases.run()
 
 

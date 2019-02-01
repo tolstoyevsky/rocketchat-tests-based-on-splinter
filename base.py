@@ -187,32 +187,44 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
 
 class RocketChatTestCase(SplinterTestCase):
-    def __init__(self, addr, username, password, create_test_user=True,
-                 **kwargs):
+    def __init__(self, addr, username, password, expected_groups=None, **kwargs):
         SplinterTestCase.__init__(self, addr, **kwargs)
 
         self.rocket = RocketChat(username, password, server_url=addr)
 
+        if expected_groups:
+            self.expected_groups = expected_groups.split(',')
+
         self.schedule_pre_test_case('login')
         self.schedule_pre_test_case('test_check_version')
-
-        if create_test_user:
-            self.schedule_pre_test_case('create_user')
 
         self.username = username
         self.password = password
         self._rc_version = '0.70'
 
+        self.test_user_id = None
         self.test_username = 'noname'
         self.test_full_name = 'No Name'
         self.test_email = 'noname@nodomain.com'
         self.test_password = 'pass'
 
-        if create_test_user:
-            self.schedule_test_case('remove_user')
-
     def __del__(self):
         self.browser.quit()
+
+    def delete_all_extra_users(self):
+        all = self.rocket.users_list().json()
+        to_be_deleted = [i['_id'] for i in all['users'] if 'user' in i['roles']]
+
+        for user_id in to_be_deleted:
+            self.rocket.users_delete(user_id=user_id)
+
+    def delete_all_extra_groups(self):
+        all = self.rocket.groups_list_all().json()
+        to_be_deleted = \
+            [i['name'] for i in all['groups'] if i['name'] not in self.expected_groups]
+
+        for group_name in to_be_deleted:
+            self.rocket.groups_delete(group=group_name)
 
     def check_latest_response_with_retries(self, expected_text,
                                            match=False, messages_number=1,
@@ -292,108 +304,17 @@ class RocketChatTestCase(SplinterTestCase):
 
 
     def create_user(self):
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username,
-            expected_res=False
-        )
-        assert not does_username_exist
+        response = self.rocket.users_register(
+            email=self.test_email,
+            name=self.test_full_name,
+            password=self.test_password,
+            username=self.test_username
+            ).json()
 
-        does_email_exist = self.check_with_retries(
-            self.does_email_exist,
-            self.test_email,
-            expected_res=False
-        )
-        assert not does_email_exist
+        if not response['success']:
+            raise APIError(response['error'])
 
-        options_btn = self.browser.find_by_css(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
-        )
-        options_btn.last.click()
-
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        users_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Users"]')
-
-        assert len(users_btn)
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           users_btn[0])
-
-        add_user_btn = self.find_by_css('button[aria-label="Add User"]')
-
-        assert len(add_user_btn)
-
-        add_user_btn.click()
-
-        input_name_el = self.find_by_css('input#name')
-
-        assert len(input_name_el)
-
-        input_name_el.first.fill(self.test_full_name)
-
-        input_username_el = self.find_by_css('input#username')
-
-        assert len(input_username_el)
-
-        input_username_el.first.fill(self.test_username)
-
-        input_email_el = self.find_by_css('input#email')
-
-        assert len(input_email_el)
-
-        input_email_el.first.fill(self.test_email)
-
-        verified_btn = self.find_by_css('label.rc-switch__label')
-
-        assert len(verified_btn)
-
-        verified_btn.first.click()
-
-        input_password_el = self.find_by_css('input#password')
-
-        assert len(input_password_el)
-
-        input_password_el.first.fill(self.test_password)
-
-        verified_btn = self.find_by_css('label.rc-switch__label')
-
-        assert len(verified_btn)
-
-        verified_btn.last.click()
-
-        role_option = self.find_by_css('option[value="user"]')
-
-        assert len(role_option)
-
-        role_option.first.click()
-
-        add_role_btn = self.find_by_css('button#addRole')
-
-        assert len(add_role_btn)
-
-        add_role_btn.first.click()
-
-        # Do not send welcome email
-        welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
-
-        assert len(welcome_ckbx)
-
-        welcome_ckbx.first.click()
-
-        save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
-
-        assert len(save_btn)
-
-        save_btn.first.click()
-
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username
-        )
-        assert does_username_exist
+        self.test_user_id = response['user']['_id']
 
     def login(self, use_test_user=False):
         self.browser.fill('emailOrUsername',
@@ -474,89 +395,14 @@ class RocketChatTestCase(SplinterTestCase):
         return not windows
 
     def remove_user(self):
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username
-        )
-        assert does_username_exist
+        if not self.test_user_id:
+            response = self.rocket.users_list().json()
+            self.test_user_id = [
+                i.get('_id', None) for i in response['users']
+                if i.get('username', None) == self.test_username
+            ][0]
 
-        options_btn = self.browser.driver.find_elements_by_css_selector(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
-
-        assert len(options_btn)
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           options_btn[-1])
-
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        users_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Users"]')
-
-        assert len(users_btn)
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           users_btn[0])
-
-        selected_user = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.
-            format(self.test_username))
-
-        assert len(selected_user)
-
-        selected_user.first.click()
-
-        try:
-            delete_btn = self.find_by_xpath(
-                '//button[@class="js-action rc-user-info-action__item"]'
-                '[text()="Delete"]'
-            )
-
-            assert len(delete_btn)
-
-        except AssertionError:
-            more_btn = self.find_by_css(
-                'button.rc-tooltip.rc-room-actions__button.js-more'
-                '[aria-label="More"]'
-            )
-
-            assert len(more_btn)
-
-            more_btn.first.click()
-
-            delete_btn = self.find_by_xpath(
-                '//li[@class="rc-popover__item js-action"]'
-                '/span[text()="Delete"]'
-            )
-
-            assert len(delete_btn)
-
-        delete_btn.first.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert len(confirm_btn)
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert len(close_btn)
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
-
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username,
-            expected_res=False
-        )
-        assert not does_username_exist
+        self.rocket.users_delete(user_id=self.test_user_id)
 
     def send_message(self, message_text):
         self.browser.fill('msg', message_text)

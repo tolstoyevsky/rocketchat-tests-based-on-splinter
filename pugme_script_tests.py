@@ -73,7 +73,7 @@ def main():
         parser.error('Pugs limit is not specified')
 
     test_cases = PugmeScriptTestCase(options.host, options.username, options.password,
-                                     pugs_limit=options.pugs_limit, create_test_user=False)
+                                     pugs_limit=options.pugs_limit)
     test_cases.run()
 
 
