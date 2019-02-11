@@ -32,6 +32,11 @@ from selenium.common.exceptions import (
 from selenium.webdriver.support.wait import WebDriverWait
 
 
+class APIError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+
 class OrderedClassMembers(type):
     @classmethod
     def __prepare__(mcs, name, bases):
@@ -96,9 +101,6 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
     def schedule_test_case(self, test_case_name):
         self._test_cases.append(test_case_name)
 
-    def schedule_post_test_case(self, test_case_name):
-        self._post_test_cases.append(test_case_name)
-
     def _run(self):
         if not self._test_cases:
             print('There is nothing to run since the number of test cases is '
@@ -106,9 +108,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
             return
 
         start_time = time.time()
-        for test_case in self._pre_test_cases + \
-                         self._test_cases + \
-                         self._post_test_cases:
+        for test_case in self._pre_test_cases + self._test_cases:
             method = getattr(self, test_case)
             print('Running {}...'.format(test_case), end=' ', flush=True)
 
@@ -144,7 +144,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
     def run(self):
         try:
-            self._run()
+            ready_to_run = self.handle_env(self.setup)
+            if ready_to_run:
+                self._run()
 
         except KeyboardInterrupt:
             print('\nThe process was stopped by pressing Ctrl+C.')
@@ -155,11 +157,33 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         except requests.ConnectionError:
             print('\nThe internet connection was lost')
 
+        except APIError as e:
+            print('\nAPIError: {}'.format(e.msg))
+
         finally:
-            for post_test_case in self._post_test_cases:
-                method = getattr(self, post_test_case)
-                print('Running clean up {}...'.format(post_test_case))
-                method()
+            self.handle_env(self.tear_down)
+
+    @staticmethod
+    def handle_env(func):
+        print('Starting {}...'.format(func.__name__))
+        try:
+            func()
+
+        except APIError as e:
+            print('{} failed.'.format(func.__name__.capitalize()))
+            print('APIError: {}'.format(e.msg))
+
+            return False
+
+        print('{} done.'.format(func.__name__.capitalize()))
+
+        return True
+
+    def setup(self):
+        pass
+
+    def tear_down(self):
+        pass
 
 
 class RocketChatTestCase(SplinterTestCase):
