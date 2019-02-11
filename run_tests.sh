@@ -25,6 +25,8 @@ set -x
 
 ADDR=${HOST:="http://127.0.0.1:8006"}
 
+EXP_GROUPS=${EXP_GROUPS:="hr,leave-coordination"}
+
 USERNAME=${USERNAME:=""}
 
 PASSWORD=${PASSWORD:=""}
@@ -84,7 +86,7 @@ for i in "${RUN[@]}"; do
             ;;
         # Tests for different scripts
         happy_birthder_script)
-            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}"
+            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}" --groups="${EXP_GROUPS}"
             ;;
         pugme_script)
             ${PYTHON} pugme_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --pugs_limit="${PUGS_LIMIT}"

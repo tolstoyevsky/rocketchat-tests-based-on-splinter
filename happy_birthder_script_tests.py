@@ -25,8 +25,10 @@ from base import RocketChatTestCase
 
 
 class HappyBirthderScriptTestCase(RocketChatTestCase):
-    def __init__(self, addr, username, password, reminder_interval_time, **kwargs):
-        RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
+    def __init__(self, addr, username, password, reminder_interval_time,
+                 expected_groups, **kwargs):
+        RocketChatTestCase.__init__(self, addr, username, password,
+                                    expected_groups, **kwargs)
 
         self.schedule_pre_test_case('choose_general_channel')
 
@@ -39,6 +41,24 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self._bot_name = 'meeseeks'
 
         self._test_user_for_blacklist = 'test_user_for_blacklist'
+
+    def tear_down(self):
+        clean_methods = (
+            self.delete_all_extra_groups,
+            self.delete_all_extra_users
+            )
+
+        for clean_method in clean_methods:
+            print('Running {}...'.format(clean_method.__name__), end=' ')
+
+            try:
+                clean_method()
+
+            except Exception as e:
+                self._color_in_red('failed')
+                raise e
+
+            self._color_in_green('done')
 
     def _get_date_with_shift(self, shift):
         return (datetime.now() + timedelta(days=shift)).strftime('%d.%m.%Y')
@@ -467,6 +487,11 @@ def main():
     parser.add_option('-w', '--wait', dest='wait',
                       help='allows specifying time '
                            'for waiting reminder\'s work(secs)')
+    parser.add_option('-g', '--groups', dest='exp_groups',
+                      help='''
+                        allows specifying the private groups which must 
+                        be in Rocket.Chat when the tests are running
+                        ''')
 
     options, _ = parser.parse_args()
 
@@ -482,9 +507,13 @@ def main():
     if not options.wait:
         options.wait = '100'
 
+    if not options.exp_groups:
+        options.exp_groups = 'hr,leave-coordination'
+
     test_cases = HappyBirthderScriptTestCase(options.host, options.username,
                                              options.password,
                                              reminder_interval_time=options.wait,
+                                             expected_groups=options.exp_groups,
                                              )
     test_cases.run()
 
