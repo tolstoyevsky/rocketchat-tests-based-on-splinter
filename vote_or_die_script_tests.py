@@ -107,7 +107,7 @@ def main():
         parser.error('Password is not specified')
 
     test_cases = VoteOrDieScriptTestCase(options.host, options.username,
-                                         options.password, create_test_user=False)
+                                         options.password)
     exit_code = test_cases.run()
     sys.exit(exit_code)
 

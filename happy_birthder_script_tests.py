@@ -36,6 +36,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
     def __init__(self, addr, username, password, reminder_interval_time, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
 
+        self.make_connections('connect_to_rc_api')
+
         self.schedule_pre_test_case('choose_general_channel')
 
         self._reminder_interval_time = int(reminder_interval_time)
@@ -146,10 +148,6 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
         """
 
         self.create_user()
-        close_btn = self.find_by_css('button[data-action="close"]')
-        assert close_btn
-
-        close_btn.click()
         self.logout()
         self.login(use_test_user=True)
         self.switch_channel(self._bot_name)
@@ -667,7 +665,7 @@ def main():
     test_cases = HappyBirthderScriptTestCase(options.host, options.username,
                                              options.password,
                                              reminder_interval_time=options.wait,
-                                             create_test_user=False)
+                                             )
     exit_code = test_cases.run()
     sys.exit(exit_code)
 

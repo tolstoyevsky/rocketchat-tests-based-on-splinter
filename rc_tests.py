@@ -38,6 +38,8 @@ class GeneralRocketChatTestCase(RocketChatTestCase):
     def __init__(self, addr, username, password, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
 
+        self.make_connections('connect_to_rc_api')
+
         self._test_string = 'Test string'
         self._base_dividing_message = 'Cat from clipboard'
         self._file_url = os.path.join(os.getcwd(), 'static', 'cat.gif')
@@ -190,6 +192,113 @@ class GeneralRocketChatTestCase(RocketChatTestCase):
     #
     # Public methods
     #
+
+    def test_creating_user(self): # pylint: disable=too-many-locals
+        """Tests if it's possible to create user. """
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username,
+            expected_res=False
+        )
+        assert not does_username_exist
+
+        does_email_exist = self.check_with_retries(
+            self.does_email_exist,
+            self.test_email,
+            expected_res=False
+        )
+        assert not does_email_exist
+
+        options_btn = self.browser.find_by_css(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
+        )
+        options_btn.last.click()
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        users_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Users"]')
+
+        assert users_btn
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           users_btn[0])
+
+        add_user_btn = self.find_by_css('button[aria-label="Add User"]')
+
+        assert add_user_btn
+
+        add_user_btn.click()
+
+        input_name_el = self.find_by_css('input#name')
+
+        assert input_name_el
+
+        input_name_el.first.fill(self.test_full_name)
+
+        input_username_el = self.find_by_css('input#username')
+
+        assert input_username_el
+
+        input_username_el.first.fill(self.test_username)
+
+        input_email_el = self.find_by_css('input#email')
+
+        assert input_email_el
+
+        input_email_el.first.fill(self.test_email)
+
+        verified_btn = self.find_by_css('label.rc-switch__label')
+
+        assert verified_btn
+
+        verified_btn.first.click()
+
+        input_password_el = self.find_by_css('input#password')
+
+        assert input_password_el
+
+        input_password_el.first.fill(self.test_password)
+
+        verified_btn = self.find_by_css('label.rc-switch__label')
+
+        assert verified_btn
+
+        verified_btn.last.click()
+
+        role_option = self.find_by_css('option[value="user"]')
+
+        assert role_option
+
+        role_option.first.click()
+
+        add_role_btn = self.find_by_css('button#addRole')
+
+        assert add_role_btn
+
+        add_role_btn.first.click()
+
+        # Do not send welcome email
+        welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
+
+        assert welcome_ckbx
+
+        welcome_ckbx.first.click()
+
+        save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
+
+        assert save_btn
+
+        save_btn.first.click()
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username
+        )
+
+        assert does_username_exist
 
     def test_starring_messages(self):
         """Tests if it's possible to star messages.
@@ -1056,6 +1165,94 @@ class GeneralRocketChatTestCase(RocketChatTestCase):
 
         self.check_latest_response_with_retries(expected_message, match=True)
 
+    def test_removing_user(self):
+        """ Tests if it's possible to delete user. """
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username
+        )
+        assert does_username_exist
+
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert options_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        users_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Users"]')
+
+        assert users_btn
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           users_btn[0])
+
+        selected_user = self.browser.find_by_xpath(
+            '//td[@class="border-component-color"][text()="{0}"]'.
+            format(self.test_username))
+
+        assert selected_user
+
+        selected_user.first.click()
+
+        try:
+            delete_btn = self.find_by_xpath(
+                '//button[@class="js-action rc-user-info-action__item"]'
+                '[text()="Delete"]'
+            )
+
+            assert delete_btn
+
+        except AssertionError:
+            more_btn = self.find_by_css(
+                'button.rc-tooltip.rc-room-actions__button.js-more'
+                '[aria-label="More"]'
+            )
+
+            assert more_btn
+
+            more_btn.first.click()
+
+            delete_btn = self.find_by_xpath(
+                '//li[@class="rc-popover__item js-action"]'
+                '/span[text()="Delete"]'
+            )
+
+            assert delete_btn
+
+        delete_btn.first.click()
+
+        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
+
+        assert confirm_btn
+
+        confirm_btn.first.click()
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_modal_window_visibility())
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert close_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username,
+            expected_res=False
+        )
+
+        assert not does_username_exist
+
 
 def main():
     """The main entry point. """
@@ -1081,7 +1278,7 @@ def main():
         parser.error('Password is not specified')
 
     test_cases = GeneralRocketChatTestCase(options.host, options.username,
-                                           options.password, create_test_user=True)
+                                           options.password)
     exit_code = test_cases.run()
     sys.exit(exit_code)
 

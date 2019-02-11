@@ -25,7 +25,11 @@ import traceback
 from curses import tparm, tigetstr, setupterm
 
 import requests
-from rocketchat_API.rocketchat import RocketChat
+from rocketchat_API.rocketchat import (
+    RocketChat,
+    RocketAuthenticationException,
+    RocketConnectionException
+)
 from splinter import Browser
 from splinter.driver.webdriver.chrome import Options
 from selenium.common.exceptions import (
@@ -33,8 +37,16 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
     WebDriverException
 )
-from selenium.webdriver.support.wait import WebDriverWait
 from xvfbwrapper import Xvfb
+
+
+class APIError(Exception):
+    """Class for defining API errors. """
+
+    def __init__(self, msg):
+        Exception.__init__(self)
+
+        self.msg = msg
 
 
 class OrderedClassMembers(type):
@@ -61,25 +73,10 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
                  page_load_timeout=30, sticky_timeout=30):
         setupterm()
 
-        if os.path.isfile('/.docker'):
-            # xvfb wrapper starting
-            print('Using Xvfb')
-            kwargs = {}
-            if 'XVFB_WIDTH' in os.environ:
-                kwargs['width'] = os.environ['XVFB_WIDTH']
-            if 'XVFB_HEIGHT' in os.environ:
-                kwargs['height'] = os.environ['XVFB_HEIGHT']
-            self.xvfb = Xvfb(**kwargs)
-            self.xvfb.start()
-
-        options = Options()
-        options.add_argument('--no-sandbox')
-        self.browser = Browser('chrome', headless=False, options=options, wait_time=30,
-                               executable_path='./drivers/chromedriver')
-        self.browser.driver.implicitly_wait(sticky_timeout)
-        self.browser.driver.set_page_load_timeout(page_load_timeout)
-        self.browser.driver.set_window_size(*browser_window_size)
-        self.browser.visit(addr)
+        self.addr = addr
+        self.sticky_timeout = sticky_timeout
+        self.page_load_timeout = page_load_timeout
+        self.browser_window_size = browser_window_size
 
         self._failed_number = 0
         self._succeeded_number = 0
@@ -87,6 +84,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
         self._red = tparm(tigetstr('setaf'), 1).decode('utf8')
         self._green = tparm(tigetstr('setaf'), 2).decode('utf8')
         self._reset = tparm(tigetstr('sgr0')).decode('utf8')
+
+        self._make_connections = ['connect_to_browser', ]
+        self._close_connections = ['close_browser_connection', ]
 
         self._pre_test_cases = []
         self._test_cases = []
@@ -113,6 +113,16 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
         """A shortcut for self.browser.find_by_xpath. """
 
         return self.browser.find_by_xpath(xpath)
+
+    def make_connections(self, conn):
+        """Makes specified connection. """
+
+        self._make_connections.append(conn)
+
+    def close_connections(self, conn):
+        """Implements the graceful closing for specified connection if needed. """
+
+        self._close_connections.append(conn)
 
     def schedule_pre_test_case(self, test_case_name):
         """Schedules the specified test case as a pre-test case (i.e. the test
@@ -190,8 +200,20 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
         verbose_script_name = ' '.join(name).lower()
         print('Starting {}'.format(verbose_script_name))
 
+        connected = self._handle_connections(self._make_connections)
+
+        if not connected:
+            exit_code = 1
+
+            return exit_code
+
         try:
-            exit_code = self._run()
+            ready_to_run = self._handle_env(self.setup)
+
+            if ready_to_run:
+                exit_code = self._run()
+            else:
+                exit_code = 1
 
         except KeyboardInterrupt:
             exit_code = 130
@@ -209,47 +231,179 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
             exit_code = 1
             print('\nThe internet connection was lost')
 
+        except APIError as error:
+            exit_code = 1
+            print('\nAPIError: {}'.format(error.msg))
+
         finally:
-            for post_test_case in self._post_test_cases:
-                method = getattr(self, post_test_case)
-                print('Running clean up {}...'.format(post_test_case))
-                method()
+            self._handle_env(self.tear_down)
+            self._handle_connections(self._close_connections)
 
-            if os.path.isfile('/.docker'):
-                self.xvfb.stop()
+            # pylint: disable=lost-exception
+            return exit_code
 
-        return exit_code
+    @staticmethod
+    def _handle_env(func):
+        try:
+            func()
+
+        except APIError as error:
+            print('APIError: {}'.format(error.msg))
+
+            return False
+
+        return True
+
+    def _handle_connections(self, connections_lst):
+        for connection in connections_lst:
+            method = getattr(self, connection)
+            connected = method()
+
+            if not connected:
+                return False
+
+        return True
+
+    def connect_to_browser(self):
+        """Makes connection with browser and with webdriver in case of Docker. """
+
+        if os.path.isfile('/.docker'):
+            # xvfb wrapper starting
+            print('Using Xvfb')
+            kwargs = {}
+            if 'XVFB_WIDTH' in os.environ:
+                kwargs['width'] = os.environ['XVFB_WIDTH']
+            if 'XVFB_HEIGHT' in os.environ:
+                kwargs['height'] = os.environ['XVFB_HEIGHT']
+
+            # pylint: disable=attribute-defined-outside-init
+            self.xvfb = Xvfb(**kwargs)
+            try:
+                self.xvfb.start()
+
+            except WebDriverException:
+                return False
+
+        options = Options()
+        options.add_argument('--no-sandbox')
+
+        try:
+            # pylint: disable=attribute-defined-outside-init
+            self.browser = Browser('chrome', headless=False, options=options,
+                                   wait_time=30,
+                                   executable_path='./drivers/chromedriver')
+
+        except ConnectionError:
+            print('\nFailed to connect with browser.')
+            return False
+
+        self.browser.driver.implicitly_wait(self.sticky_timeout)
+        self.browser.driver.set_page_load_timeout(self.page_load_timeout)
+        self.browser.driver.set_window_size(*self.browser_window_size)
+        self.browser.visit(self.addr)
+
+        return True
+
+    def close_browser_connection(self):
+        """Provides graceful closing of browser connection in Docker. """
+
+        if os.path.isfile('/.docker'):
+            self.xvfb.stop()
+
+        return True
+
+    def setup(self):
+        """Provides abstract setup method to be defined in test cases. """
+
+    def tear_down(self):
+        """Provides abstract tear down method to be defined in test cases. """
 
 
 class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance-attributes
     """Test cases related to Rocket.Chat. """
 
-    def __init__(self, addr, username, password, create_test_user=True,
+    def __init__(self, addr, username, password, expected_rooms=None,
                  **kwargs):
         SplinterTestCase.__init__(self, addr, **kwargs)
 
-        self.rocket = RocketChat(username, password, server_url=addr)
+        if expected_rooms:
+            self.expected_rooms = expected_rooms.split(',')
 
         self.schedule_pre_test_case('login')
         self.schedule_pre_test_case('test_check_version')
-
-        if create_test_user:
-            self.schedule_pre_test_case('create_user')
 
         self.username = username
         self.password = password
         self._rc_version = '0.70'
 
+        self.test_user_id = None
         self.test_username = 'noname'
         self.test_full_name = 'No Name'
         self.test_email = 'noname@nodomain.com'
         self.test_password = 'pass'
 
-        if create_test_user:
-            self.schedule_test_case('remove_user')
+    def connect_to_rc_api(self):
+        """Makes connection to the RocketChat API. """
 
-    def __del__(self):
-        self.browser.quit()
+        try:
+            # pylint: disable=attribute-defined-outside-init
+            self.rocket = RocketChat(
+                self.username,
+                self.password,
+                server_url=self.addr
+            )
+
+        except RocketAuthenticationException:
+            print('Rocket.Chat auth error. Incorrect username or password.')
+            return False
+
+        except RocketConnectionException:
+            print('Could not connect to Rocket.Chat API.')
+            return False
+
+        return True
+
+    def delete_all_extra_users(self):
+        """Deletes all users except admin with user role via Rocket.Chat API. """
+
+        response = self.rocket.users_list().json()
+
+        try:
+            users = response['users']
+            to_be_deleted = [user['_id'] for user in users if 'user' in user['roles']]
+
+        except KeyError:
+            raise APIError(response.get('error'))
+
+        for user_id in to_be_deleted:
+            self.rocket.users_delete(user_id=user_id)
+
+    def delete_all_extra_rooms(self):
+        """Deletes all groups and private channels via Rocket.Chat API
+        except specified by self.expected_rooms param.
+        """
+        response = self.rocket.groups_list_all().json()
+
+        try:
+            groups = response['groups']
+            for group in groups:
+                if group['name'] not in self.expected_rooms:
+                    self.rocket.groups_delete(group=group['name'])
+
+        except KeyError:
+            raise APIError(response.get('error'))
+
+        response = self.rocket.channels_list().json()
+
+        try:
+            channels = response['channels']
+
+            for channel in channels:
+                if channel['name'] not in self.expected_rooms and not channel['default']:
+                    self.rocket.channels_delete(channel=channel['name'])
+
+        except KeyError:
+            raise APIError(response.get('error'))
 
     def check_latest_response_with_retries(self, expected_text,
                                            match=False, messages_number=1,
@@ -358,111 +512,21 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
 
         return result != []
 
-    def create_user(self):  # pylint: disable=too-many-locals
+    def create_user(self):
         """Creates a test user. """
 
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username,
-            expected_res=False
-        )
-        assert not does_username_exist
+        response = self.rocket.users_register(
+            email=self.test_email,
+            name=self.test_full_name,
+            password=self.test_password,
+            username=self.test_username
+            ).json()
 
-        does_email_exist = self.check_with_retries(
-            self.does_email_exist,
-            self.test_email,
-            expected_res=False
-        )
-        assert not does_email_exist
+        try:
+            self.test_user_id = response['user']['_id']
 
-        options_btn = self.browser.find_by_css(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
-        )
-        options_btn.last.click()
-
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        users_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Users"]')
-
-        assert users_btn
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           users_btn[0])
-
-        add_user_btn = self.find_by_css('button[aria-label="Add User"]')
-
-        assert add_user_btn
-
-        add_user_btn.click()
-
-        input_name_el = self.find_by_css('input#name')
-
-        assert input_name_el
-
-        input_name_el.first.fill(self.test_full_name)
-
-        input_username_el = self.find_by_css('input#username')
-
-        assert input_username_el
-
-        input_username_el.first.fill(self.test_username)
-
-        input_email_el = self.find_by_css('input#email')
-
-        assert input_email_el
-
-        input_email_el.first.fill(self.test_email)
-
-        verified_btn = self.find_by_css('label.rc-switch__label')
-
-        assert verified_btn
-
-        verified_btn.first.click()
-
-        input_password_el = self.find_by_css('input#password')
-
-        assert input_password_el
-
-        input_password_el.first.fill(self.test_password)
-
-        verified_btn = self.find_by_css('label.rc-switch__label')
-
-        assert verified_btn
-
-        verified_btn.last.click()
-
-        role_option = self.find_by_css('option[value="user"]')
-
-        assert role_option
-
-        role_option.first.click()
-
-        add_role_btn = self.find_by_css('button#addRole')
-
-        assert add_role_btn
-
-        add_role_btn.first.click()
-
-        # Do not send welcome email
-        welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
-
-        assert welcome_ckbx
-
-        welcome_ckbx.first.click()
-
-        save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
-
-        assert save_btn
-
-        save_btn.first.click()
-
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username
-        )
-        assert does_username_exist
+        except KeyError:
+            raise APIError(response.get('error'))
 
     def login(self, use_test_user=False):
         """Logs in into the Rocket.Chat server. """
@@ -553,89 +617,17 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
     def remove_user(self):
         """Removes a test user. """
 
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username
-        )
-        assert does_username_exist
+        if not self.test_user_id:
+            response = self.rocket.users_list().json()
+            try:
+                users = response['users']
+                self.test_user_id = [user['_id'] for user in users
+                                     if user['username'] == self.test_username][0]
 
-        options_btn = self.browser.driver.find_elements_by_css_selector(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+            except KeyError:
+                raise APIError(response.get('error'))
 
-        assert options_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           options_btn[-1])
-
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        users_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Users"]')
-
-        assert users_btn
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           users_btn[0])
-
-        selected_user = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.
-            format(self.test_username))
-
-        assert selected_user
-
-        selected_user.first.click()
-
-        try:
-            delete_btn = self.find_by_xpath(
-                '//button[@class="js-action rc-user-info-action__item"]'
-                '[text()="Delete"]'
-            )
-
-            assert delete_btn
-
-        except AssertionError:
-            more_btn = self.find_by_css(
-                'button.rc-tooltip.rc-room-actions__button.js-more'
-                '[aria-label="More"]'
-            )
-
-            assert more_btn
-
-            more_btn.first.click()
-
-            delete_btn = self.find_by_xpath(
-                '//li[@class="rc-popover__item js-action"]'
-                '/span[text()="Delete"]'
-            )
-
-            assert delete_btn
-
-        delete_btn.first.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert confirm_btn
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert close_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
-
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username,
-            expected_res=False
-        )
-        assert not does_username_exist
+        self.rocket.users_delete(user_id=self.test_user_id)
 
     def send_message(self, message_text):
         """Sends the specified message to the current channel. """

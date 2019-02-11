@@ -27,6 +27,8 @@ ADDR=${ADDR:="127.0.0.1"}
 
 PORT=${PORT:=8006}
 
+EXP_ROOMS=${EXP_ROOMS:="hr,leave-coordination"}
+
 USERNAME=${USERNAME:=""}
 
 PASSWORD=${PASSWORD:=""}
