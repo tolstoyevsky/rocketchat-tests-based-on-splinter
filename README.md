@@ -79,6 +79,11 @@ All the parameters mentioned below are **mandatory**, so don't forget to provide
     <td>http://127.0.0.1:8006</td>
   </tr>
   <tr>
+    <td>EXP_GROUPS</td>
+    <td>The private groups names which must be in Rocket.Chat when the tests are running. This parameter is used in combination with the <code>tear_down</code> method that deletes all the extra private groups to provide a clean environment.</td>
+    <td><code>hr,leave-coordination</code></td>
+  </tr>
+  <tr>
     <td>USERNAME</td>
     <td>Username of an administrator on the server.</td>
     <td></td>
