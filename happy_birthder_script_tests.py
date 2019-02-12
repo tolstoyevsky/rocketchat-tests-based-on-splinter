@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import re
+import sys
 import time
 
 from datetime import datetime, timedelta
@@ -476,6 +477,9 @@ def main():
 
     if not options.host:
         options.host = 'http://127.0.0.1:8006'
+        sys.stderr.write(
+            'Host is not specified. Defaults to {}.\n'.format(options.host)
+        )
 
     if not options.username:
         parser.error('Username is not specified')
@@ -485,6 +489,9 @@ def main():
 
     if not options.wait:
         options.wait = '100'
+        sys.stderr.write(
+            'Waiting time is not specified. Defaults to {}.\n'.format(options.wait)
+        )
 
     test_cases = HappyBirthderScriptTestCase(options.host, options.username,
                                              options.password,
