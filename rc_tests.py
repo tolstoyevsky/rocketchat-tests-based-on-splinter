@@ -16,6 +16,7 @@
 
 import datetime
 import os
+import sys
 import uuid
 from optparse import OptionParser
 
@@ -986,7 +987,10 @@ def main():
     options, args = parser.parse_args()
 
     if not options.host:
-        parser.error('Host is not specified')
+        options.host = 'http://127.0.0.1:8006'
+        sys.stderr.write(
+            'Host is not specified. Defaults to {}.\n'.format(options.host)
+        )
 
     if not options.username:
         parser.error('Username is not specified')

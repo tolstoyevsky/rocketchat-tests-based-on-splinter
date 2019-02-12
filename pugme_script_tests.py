@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 from optparse import OptionParser
 
 from base import RocketChatTestCase
@@ -61,7 +62,10 @@ def main():
     options, args = parser.parse_args()
 
     if not options.host:
-        parser.error('Host is not specified')
+        options.host = 'http://127.0.0.1:8006'
+        sys.stderr.write(
+            'Host is not specified. Defaults to {}.\n'.format(options.host)
+        )
 
     if not options.username:
         parser.error('Username is not specified')
@@ -70,7 +74,10 @@ def main():
         parser.error('Password is not specified')
 
     if not options.pugs_limit:
-        parser.error('Pugs limit is not specified')
+        options.pugs_limit = '5'
+        sys.stderr.write(
+            'Pugs limit is not specified. Defaults to {}.\n'.format(options.pugs_limit)
+        )
 
     test_cases = PugmeScriptTestCase(options.host, options.username, options.password,
                                      pugs_limit=options.pugs_limit, create_test_user=False)
