@@ -277,6 +277,7 @@ class RocketChatTestCase(SplinterTestCase):
             if res == expected_res:
                 break
             else:
+                time.sleep(1)
                 continue
 
         return res
