@@ -22,7 +22,7 @@ import traceback
 from curses import tparm, tigetstr, setupterm
 
 import requests
-from rocketchat_API.rocketchat import RocketChat
+from rocketchat_API.rocketchat import RocketChat, RocketAuthenticationException, RocketConnectionException
 from splinter import Browser
 from selenium.common.exceptions import (
     NoSuchWindowException,
@@ -160,6 +160,12 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         except APIError as e:
             print('\nAPIError: {}'.format(e.msg))
 
+        except RocketAuthenticationException:
+            print('Rocket Chat auth error. Incorrect username or password')
+
+        except RocketConnectionException:
+            print('Could not connect to Rocket Chat')
+
         finally:
             self.handle_env(self.tear_down)
 
@@ -190,16 +196,17 @@ class RocketChatTestCase(SplinterTestCase):
     def __init__(self, addr, username, password, expected_groups=None, **kwargs):
         SplinterTestCase.__init__(self, addr, **kwargs)
 
-        self.rocket = RocketChat(username, password, server_url=addr)
-
         if expected_groups:
             self.expected_groups = expected_groups.split(',')
+        
+        self.rocket = None
 
         self.schedule_pre_test_case('login')
         self.schedule_pre_test_case('test_check_version')
 
         self.username = username
         self.password = password
+        self.addr = addr
         self._rc_version = '0.70'
 
         self.test_user_id = None
@@ -207,6 +214,9 @@ class RocketChatTestCase(SplinterTestCase):
         self.test_full_name = 'No Name'
         self.test_email = 'noname@nodomain.com'
         self.test_password = 'pass'
+
+    def setup(self):
+        self.rocket = RocketChat(self.username, self.password, server_url=self.addr)
 
     def __del__(self):
         self.browser.quit()
