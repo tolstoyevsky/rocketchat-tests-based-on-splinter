@@ -45,101 +45,24 @@ class GeneralTestCase(RocketChatTestCase):
 
         self._non_unique_channel_name = 'test_channel'
 
-        self.schedule_test_case('_delete_channels')
+    def tear_down(self):
+        if self.rocket:
+            clean_methods = (
+                self.delete_all_extra_groups,
+                self.delete_all_extra_users
+                )
 
-    def _delete_channels(self):
-        options_btn = self.browser.driver.find_elements_by_css_selector(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+            for clean_method in clean_methods:
+                print('Running {}...'.format(clean_method.__name__), end=' ')
 
-        assert len(options_btn)
+                try:
+                    clean_method()
 
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           options_btn[-1])
+                except Exception as e:
+                    self._color_in_red('failed')
+                    raise e
 
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        rooms_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Rooms"]')
-
-        assert len(rooms_btn)
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           rooms_btn[0])
-
-        selected_room = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.format(
-                self._public_channel_name))
-
-        assert len(selected_room)
-
-        selected_room.click()
-
-        delete_btn = self.browser.driver.find_element_by_class_name('button')
-
-        assert delete_btn
-
-        delete_btn.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert len(confirm_btn)
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        selected_room = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.format(
-                self._private_channel_name))
-
-        assert len(selected_room)
-
-        selected_room.click()
-
-        delete_btn = self.browser.driver.find_element_by_class_name('button')
-
-        assert delete_btn
-
-        delete_btn.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert len(confirm_btn)
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        selected_room = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.format(
-                self._read_only_channel_name))
-
-        assert len(selected_room)
-
-        selected_room.click()
-
-        delete_btn = self.browser.driver.find_element_by_class_name('button')
-
-        assert delete_btn
-
-        delete_btn.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert len(confirm_btn)
-
-        confirm_btn.first.click()
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert len(close_btn)
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
+                self._color_in_green('done')
 
     def _check_elem_disabled_state(self, elem):
         act = elem._element.get_attribute('disabled')
@@ -174,6 +97,190 @@ class GeneralTestCase(RocketChatTestCase):
 
         self.browser.back()
         self.choose_general_channel()
+
+    def test_creating_user(self):
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username,
+            expected_res=False
+        )
+        assert not does_username_exist
+
+        options_btn = self.browser.find_by_css(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
+        )
+        options_btn.last.click()
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        users_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Users"]')
+
+        assert len(users_btn)
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           users_btn[0])
+
+        add_user_btn = self.find_by_css('button[aria-label="Add User"]')
+
+        assert len(add_user_btn)
+
+        add_user_btn.click()
+
+        input_name_el = self.find_by_css('input#name')
+
+        assert len(input_name_el)
+
+        input_name_el.first.fill(self.test_full_name)
+
+        input_username_el = self.find_by_css('input#username')
+
+        assert len(input_username_el)
+
+        input_username_el.first.fill(self.test_username)
+
+        input_email_el = self.find_by_css('input#email')
+
+        assert len(input_email_el)
+
+        input_email_el.first.fill(self.test_email)
+
+        verified_btn = self.find_by_css('label.rc-switch__label')
+
+        assert len(verified_btn)
+
+        verified_btn.first.click()
+
+        input_password_el = self.find_by_css('input#password')
+
+        assert len(input_password_el)
+
+        input_password_el.first.fill(self.test_password)
+
+        verified_btn = self.find_by_css('label.rc-switch__label')
+
+        assert len(verified_btn)
+
+        verified_btn.last.click()
+
+        role_option = self.find_by_css('option[value="user"]')
+
+        assert len(role_option)
+
+        role_option.first.click()
+
+        add_role_btn = self.find_by_css('button#addRole')
+
+        assert len(add_role_btn)
+
+        add_role_btn.first.click()
+
+        # Do not send welcome email
+        welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
+
+        assert len(welcome_ckbx)
+
+        welcome_ckbx.first.click()
+
+        save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
+
+        assert len(save_btn)
+
+        save_btn.first.click()
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username
+        )
+        assert does_username_exist
+
+    def test_removing_user(self):
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username
+        )
+        assert does_username_exist
+
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert len(options_btn)
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css(
+            '.rc-popover__item-text')
+        administration_btn.click()
+
+        users_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Users"]')
+
+        assert len(users_btn)
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           users_btn[0])
+
+        selected_user = self.browser.find_by_xpath(
+            '//td[@class="border-component-color"][text()="{0}"]'.
+                format(self.test_username))
+
+        assert len(selected_user)
+
+        selected_user.first.click()
+
+        try:
+            delete_btn = self.find_by_xpath(
+                '//button[@class="js-action rc-user-info-action__item"]'
+                '[text()="Delete"]'
+            )
+
+            assert len(delete_btn)
+
+        except AssertionError:
+            more_btn = self.find_by_css(
+                'button.rc-tooltip.rc-room-actions__button.js-more'
+                '[aria-label="More"]'
+            )
+
+            assert len(more_btn)
+
+            more_btn.first.click()
+
+            delete_btn = self.find_by_xpath(
+                '//li[@class="rc-popover__item js-action"]'
+                '/span[text()="Delete"]'
+            )
+
+            assert len(delete_btn)
+
+        delete_btn.first.click()
+
+        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
+
+        assert len(confirm_btn)
+
+        confirm_btn.first.click()
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_modal_window_visibility())
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert len(close_btn)
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+
+        does_username_exist = self.check_with_retries(
+            self.does_username_exist,
+            self.test_username,
+            expected_res=False
+        )
+
+        assert not does_username_exist
 
     def test_starring_messages(self):
         WebDriverWait(self.browser.driver, 10).until(
@@ -345,6 +452,7 @@ class GeneralTestCase(RocketChatTestCase):
         close_button.first.click()
 
     def test_visibility_of_pinned_message(self):
+        self.create_user()
         self.logout()
         self.login(use_test_user=True)
         self.choose_general_channel()
@@ -734,7 +842,8 @@ class GeneralTestCase(RocketChatTestCase):
         self.logout()
         self.login()
 
-    # TODO: change the test when https://github.com/RocketChat/Rocket.Chat/issues/12059 is closed.
+    # TODO: change the test
+    #  when https://github.com/RocketChat/Rocket.Chat/issues/12059 is closed.
     def test_recreating_channel_with_same_name(self):
         #  create
         create_channel_btn = self.browser.find_by_css(
@@ -974,197 +1083,6 @@ class GeneralTestCase(RocketChatTestCase):
 
         self.check_latest_response_with_retries(expected_message, match=True)
 
-    def test_creating_user(self):
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username,
-            expected_res=False
-        )
-        assert not does_username_exist
-
-        does_email_exist = self.check_with_retries(
-            self.does_email_exist,
-            self.test_email,
-            expected_res=False
-        )
-        assert not does_email_exist
-
-        options_btn = self.browser.find_by_css(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
-        )
-        options_btn.last.click()
-
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        users_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Users"]')
-
-        assert len(users_btn)
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           users_btn[0])
-
-        add_user_btn = self.find_by_css('button[aria-label="Add User"]')
-
-        assert len(add_user_btn)
-
-        add_user_btn.click()
-
-        input_name_el = self.find_by_css('input#name')
-
-        assert len(input_name_el)
-
-        input_name_el.first.fill(self.test_full_name)
-
-        input_username_el = self.find_by_css('input#username')
-
-        assert len(input_username_el)
-
-        input_username_el.first.fill(self.test_username)
-
-        input_email_el = self.find_by_css('input#email')
-
-        assert len(input_email_el)
-
-        input_email_el.first.fill(self.test_email)
-
-        verified_btn = self.find_by_css('label.rc-switch__label')
-
-        assert len(verified_btn)
-
-        verified_btn.first.click()
-
-        input_password_el = self.find_by_css('input#password')
-
-        assert len(input_password_el)
-
-        input_password_el.first.fill(self.test_password)
-
-        verified_btn = self.find_by_css('label.rc-switch__label')
-
-        assert len(verified_btn)
-
-        verified_btn.last.click()
-
-        role_option = self.find_by_css('option[value="user"]')
-
-        assert len(role_option)
-
-        role_option.first.click()
-
-        add_role_btn = self.find_by_css('button#addRole')
-
-        assert len(add_role_btn)
-
-        add_role_btn.first.click()
-
-        # Do not send welcome email
-        welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
-
-        assert len(welcome_ckbx)
-
-        welcome_ckbx.first.click()
-
-        save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
-
-        assert len(save_btn)
-
-        save_btn.first.click()
-
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username
-        )
-        assert does_username_exist
-
-    def test_removing_user(self):
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username
-        )
-        assert does_username_exist
-
-        options_btn = self.browser.driver.find_elements_by_css_selector(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
-
-        assert len(options_btn)
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           options_btn[-1])
-
-        administration_btn = self.browser.find_by_css(
-            '.rc-popover__item-text')
-        administration_btn.click()
-
-        users_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Users"]')
-
-        assert len(users_btn)
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           users_btn[0])
-
-        selected_user = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.
-                format(self.test_username))
-
-        assert len(selected_user)
-
-        selected_user.first.click()
-
-        try:
-            delete_btn = self.find_by_xpath(
-                '//button[@class="js-action rc-user-info-action__item"]'
-                '[text()="Delete"]'
-            )
-
-            assert len(delete_btn)
-
-        except AssertionError:
-            more_btn = self.find_by_css(
-                'button.rc-tooltip.rc-room-actions__button.js-more'
-                '[aria-label="More"]'
-            )
-
-            assert len(more_btn)
-
-            more_btn.first.click()
-
-            delete_btn = self.find_by_xpath(
-                '//li[@class="rc-popover__item js-action"]'
-                '/span[text()="Delete"]'
-            )
-
-            assert len(delete_btn)
-
-        delete_btn.first.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert len(confirm_btn)
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert len(close_btn)
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
-
-        does_username_exist = self.check_with_retries(
-            self.does_username_exist,
-            self.test_username,
-            expected_res=False
-        )
-
-        assert not does_username_exist
-
 
 def main():
     parser = OptionParser(usage='usage: %prog [options] arguments')
@@ -1174,10 +1092,16 @@ def main():
                       help='allows specifying admin username')
     parser.add_option('-p', '--password', dest='password',
                       help='allows specifying admin password')
+    parser.add_option('-g', '--groups', dest='exp_groups',
+                      help='''
+                            allows specifying the private groups which must 
+                            be in Rocket.Chat when the tests are running
+                            ''')
+
     options, args = parser.parse_args()
 
     if not options.host:
-        parser.error('Host is not specified')
+        options.host = 'http://127.0.0.1:8006'
 
     if not options.username:
         parser.error('Username is not specified')
@@ -1185,8 +1109,13 @@ def main():
     if not options.password:
         parser.error('Password is not specified')
 
+    if not options.exp_groups:
+        options.exp_groups = 'hr,leave-coordination'
+
     test_cases = GeneralTestCase(options.host, options.username,
-                                 options.password)
+                                 options.password,
+                                 expected_groups=options.exp_groups)
+
     test_cases.run()
 
 
