@@ -239,6 +239,7 @@ class RocketChatTestCase(SplinterTestCase):
             res = func(*args)
 
             if res == expected_res:
+                time.sleep(1)
                 break
             else:
                 continue
