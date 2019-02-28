@@ -19,6 +19,7 @@ import re
 import sys
 import time
 import traceback
+import subprocess
 from curses import tparm, tigetstr, setupterm
 
 import requests
@@ -190,9 +191,22 @@ class RocketChatTestCase(SplinterTestCase):
     def __del__(self):
         self.browser.quit()
 
+    def _cleanup_string(self, string):
+        tags = re.compile('<.*?>')
+        return re.sub(tags, '', string).strip()
+
+    def _to_typographic_punctuation(self, string):
+        command = "echo \"{0}\" | marked --smartypants".format(string)
+        result = subprocess.Popen(command, shell=True,
+                                  stdout=subprocess.PIPE).stdout.read()
+        return self._cleanup_string(result.decode("utf-8"))
+
     def check_latest_response_with_retries(self, expected_text,
                                            match=False, messages_number=1,
-                                           attempts_number=30):
+                                           attempts_number=30,
+                                           use_markdown=True):
+        if use_markdown:
+            expected_text = self._to_typographic_punctuation(expected_text)
         for i in range(attempts_number):
             latest_msg = self.browser.driver.find_elements_by_css_selector(
                 'div.body.color-primary-font-color ')
