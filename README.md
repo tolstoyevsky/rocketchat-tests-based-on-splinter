@@ -13,7 +13,7 @@ The set of tests includes:
 
 ## Prerequisites
 
-Some of the general Rocket.Chat tests are related to the clipboard, so install xclip.
+* Some of the general Rocket.Chat tests are related to the clipboard, so install xclip.
 On Debian or Ubuntu:
 ```
 $ sudo apt-get install xclip
@@ -22,6 +22,11 @@ $ sudo apt-get install xclip
 On Fedora:
 ```
 $ sudo dnf install xclip
+```
+
+* (optional) If Rocket.Chat uses a markdown parser(only markedjs supported), install it using npm
+```
+npm install -g marked
 ```
 
 ## Getting started
