@@ -35,6 +35,8 @@ PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 PYTHON=${PYTHON:="python3"}
 
+SCRIPTS=${SCRIPTS:="all"}
+
 set +x
 
 if [ -z "${PYTHON}" ]; then
@@ -42,19 +44,9 @@ if [ -z "${PYTHON}" ]; then
     exit 1
 fi
 
-while true; do
-    case "$1" in
-    -s|--scripts)
-        IFS=',' read -ra SCRIPTS <<< $2
-        shift 2
-        ;;
-    *)
-        break
-        ;;
-    esac
-done
-
 RUN=(rc)
+
+IFS=',';read -ra SCRIPTS <<< "$SCRIPTS"
 
 if [ "${SCRIPTS}" == "all" ]; then
     for i in *_tests.py; do

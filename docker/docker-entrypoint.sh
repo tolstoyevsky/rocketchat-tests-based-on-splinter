@@ -33,6 +33,8 @@ export PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 export PYTHON=${PYTHON:="python3"}
 
+export SCRIPTS=${SCRIPTS:="all"}
+
 BRANCH=${BRANCH:=docker-tests}
 
 set +x
