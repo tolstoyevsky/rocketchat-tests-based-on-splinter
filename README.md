@@ -24,6 +24,11 @@ On Fedora:
 $ sudo dnf install xclip
 ```
 
+(optional) If Rocket.Chat uses a markdown parser(only markedjs supported), install it using npm
+```
+npm install -g marked
+```
+
 ## Getting started
 
 Clone the git repository and install the dependencies:
