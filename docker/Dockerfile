@@ -36,5 +36,7 @@ RUN apt-get update -y \
 
 COPY ./docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
+COPY ./is_bot_online.py /root/is_bot_online.py
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 

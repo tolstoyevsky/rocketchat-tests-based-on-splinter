@@ -19,6 +19,8 @@ set -x
 
 export ADDR=${ADDR:="127.0.0.1"}
 
+export BOT_NAME=${BOT_NAME="meeseeks"}
+
 export PORT=${PORT:=8006}
 
 export USERNAME=${USERNAME:=""}
@@ -28,6 +30,8 @@ export PASSWORD=${PASSWORD:=""}
 export PUGS_LIMIT=${PUGS_LIMIT:=5}
 
 export PYTHON=${PYTHON:="python3"}
+
+export RUNNING_WAIT=${RUNNING_WAIT:=120}
 
 export WAIT=${WAIT:=100}
 
@@ -46,6 +50,9 @@ cd rocketchat-tests-based-on-splinter
 pip install -r requirements.txt
 
 wait-for-it.sh -h "${ADDR}" -p "${PORT}" -t 90 -- >&2 echo "Rocket.Chat is ready"
+
+>&2 echo "Checking if ${BOT_NAME} is online"
+env PYTHONPATH="/root/rocketchat-tests-based-on-splinter/" ${PYTHON} /root/is_bot_online.py --username="${USERNAME}" --password="${PASSWORD}" --wait="${RUNNING_WAIT}" --bot="${BOT_NAME}"
 
 ./run_tests.sh $*
 
