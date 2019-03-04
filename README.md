@@ -95,6 +95,11 @@ All the parameters mentioned below are **mandatory**, so don't forget to provide
     <td>127.0.0.1</td>
   </tr>
   <tr>
+    <td>BOT_NAME</td>
+    <td>Name that will be used as a bot name <b>(for Docker container only)</b>.</td>
+    <td>meeseeks</td>
+  </tr>
+  <tr>
     <td>PORT</td>
     <td>Port the Rocket.Chat server listens on.</td>
     <td>8006</td>
@@ -113,6 +118,11 @@ All the parameters mentioned below are **mandatory**, so don't forget to provide
     <td>PYTHON</td>
     <td>Python interpreter which will be used for running the tests.</td>
     <td>python3</td>
+  </tr>
+  <tr>
+    <td>RUNNING_WAIT</td>
+    <td>Number of seconds that tests will be waiting for the bot running <b>(for Docker container only)</b>.</td>
+    <td>120</td>
   </tr>
   <tr>
     <td align="center" colspan="3"><b>hubot-pugme</b></td>
