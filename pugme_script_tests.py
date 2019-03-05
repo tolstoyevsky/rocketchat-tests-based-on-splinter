@@ -81,7 +81,8 @@ def main():
 
     test_cases = PugmeScriptTestCase(options.host, options.username, options.password,
                                      pugs_limit=options.pugs_limit, create_test_user=False)
-    test_cases.run()
+    exit_code = test_cases.run()
+    sys.exit(exit_code)
 
 
 if __name__ == '__main__':

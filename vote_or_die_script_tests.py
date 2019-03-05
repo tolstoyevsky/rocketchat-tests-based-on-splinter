@@ -89,7 +89,8 @@ def main():
 
     test_cases = VoteOrDieScriptTestCase(options.host, options.username,
                                          options.password, create_test_user=False)
-    test_cases.run()
+    exit_code = test_cases.run()
+    sys.exit(exit_code)
 
 
 if __name__ == '__main__':

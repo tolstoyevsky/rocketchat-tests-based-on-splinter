@@ -497,7 +497,8 @@ def main():
                                              options.password,
                                              reminder_interval_time=options.wait,
                                              create_test_user=False)
-    test_cases.run()
+    exit_code = test_cases.run()
+    sys.exit(exit_code)
 
 
 if __name__ == '__main__':

@@ -1000,7 +1000,8 @@ def main():
 
     test_cases = GeneralTestCase(options.host, options.username,
                                  options.password, create_test_user=True)
-    test_cases.run()
+    exit_code = test_cases.run()
+    sys.exit(exit_code)
 
 
 if __name__ == '__main__':

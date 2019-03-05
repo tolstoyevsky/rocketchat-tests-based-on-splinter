@@ -112,7 +112,8 @@ def main():
         wait=options.wait
     )
 
-    checks.run()
+    exit_code = checks.run()
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

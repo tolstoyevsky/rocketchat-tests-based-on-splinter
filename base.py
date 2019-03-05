@@ -111,10 +111,12 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         self._post_test_cases.append(test_case_name)
 
     def _run(self):
+        exit_code = 0
+
         if not self._test_cases:
             print('There is nothing to run since the number of test cases is '
                   '0.')
-            return
+            return exit_code
 
         start_time = time.time()
         for test_case in self._pre_test_cases + \
@@ -128,6 +130,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
                 self._color_in_green('success')
                 self._succeeded_number += 1
             except AssertionError:
+                exit_code = 1
                 self._color_in_red('failed')
                 _, _, tb = sys.exc_info()
                 tb_info = traceback.extract_tb(tb)
@@ -146,27 +149,33 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
         if self._failed_number > 0:
             self._color_in_red('Failed')
-            return False
+            return exit_code
 
         self._color_in_green('Succeeded')
 
-        return True
+        return exit_code
 
 
     def run(self):
+        exit_code = 0
+
         try:
-            self._run()
+            exit_code = self._run()
 
         except KeyboardInterrupt:
+            exit_code = 130
             print('\nThe process was stopped by pressing Ctrl+C.')
             
         except (NoSuchWindowException, WebDriverException):
+            exit_code = 1
             print('\nThe process was stopped because the web driver exception has occurred.')
         
         except ConnectionError:
+            exit_code = 1
             print('\nFailed to connect.')
 
         except requests.ConnectionError:
+            exit_code = 1
             print('\nThe internet connection was lost')
 
         finally:
@@ -177,6 +186,8 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
             if os.path.isfile('/.docker'):
                 self.xvfb.stop()
+
+        return exit_code
 
 
 class RocketChatTestCase(SplinterTestCase):
