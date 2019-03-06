@@ -27,5 +27,9 @@ if [[ -f .env ]]; then
     done < .env
 fi
 
-docker run -it --net=host --rm ${ARGS[@]} rocketchat-tests-based-on-splinter $*
+cd ./docker/
+
+docker-compose rm -v -f
+docker-compose up --abort-on-container-exit --force-recreate
+# docker run -it --net=host --rm ${ARGS[@]} rocketchat-tests-based-on-splinter $*
 
