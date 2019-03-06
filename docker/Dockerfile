@@ -38,5 +38,7 @@ COPY ./docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 COPY ./is_bot_online.py /root/is_bot_online.py
 
+COPY ./wizard.py /root/wizard.py
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 

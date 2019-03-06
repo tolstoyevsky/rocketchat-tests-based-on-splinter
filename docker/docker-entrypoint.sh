@@ -51,8 +51,11 @@ pip install -r requirements.txt
 
 wait-for-it.sh -h "${ADDR}" -p "${PORT}" -t 90 -- >&2 echo "Rocket.Chat is ready"
 
+>&2 echo "Rocket.Chat environment initialization"
+env PYTHONPATH="/root/rocketchat-tests-based-on-splinter/" ${PYTHON} /root/wizard.py --host="http://${ADDR}:${PORT}" --username="${USERNAME}" --password="${PASSWORD}"
+
 >&2 echo "Checking if ${BOT_NAME} is online"
-env PYTHONPATH="/root/rocketchat-tests-based-on-splinter/" ${PYTHON} /root/is_bot_online.py --username="${USERNAME}" --password="${PASSWORD}" --wait="${RUNNING_WAIT}" --bot="${BOT_NAME}"
+env PYTHONPATH="/root/rocketchat-tests-based-on-splinter/" ${PYTHON} /root/is_bot_online.py --host="http://${ADDR}:${PORT}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${RUNNING_WAIT}" --bot="${BOT_NAME}"
 
 ./run_tests.sh $*
 
