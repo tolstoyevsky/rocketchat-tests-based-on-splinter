@@ -17,9 +17,10 @@
 import collections
 import re
 import sys
+import subprocess
 import time
 import traceback
-import subprocess
+
 from curses import tparm, tigetstr, setupterm
 
 import requests
@@ -185,21 +186,19 @@ class RocketChatTestCase(SplinterTestCase):
         self.test_email = 'noname@nodomain.com'
         self.test_password = 'pass'
 
+        self._tags_pattern = re.compile('<.*?>')
+
         if create_test_user:
             self.schedule_test_case('remove_user')
 
     def __del__(self):
         self.browser.quit()
 
-    def _cleanup_string(self, string):
-        tags = re.compile('<.*?>')
-        return re.sub(tags, '', string).strip()
-
     def _to_typographic_punctuation(self, string):
         command = "echo \"{0}\" | marked --smartypants".format(string)
         result = subprocess.Popen(command, shell=True,
                                   stdout=subprocess.PIPE).stdout.read()
-        return self._cleanup_string(result.decode("utf-8"))
+        return re.sub(self._tags_pattern, "", result.decode("utf-8")).strip()
 
     def check_latest_response_with_retries(self, expected_text,
                                            match=False, messages_number=1,
