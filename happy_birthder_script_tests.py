@@ -41,6 +41,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
         self._test_user_for_blacklist = 'test_user_for_blacklist'
 
+        self._fwd_date = datetime.now().replace(year=datetime.now().year - 1).strftime('%d.%m.%Y')
+
     def _get_date_with_shift(self, shift):
         return (datetime.now() + timedelta(days=shift)).strftime('%d.%m.%Y')
 
@@ -55,11 +57,78 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
         return pattern
 
+    def _get_fwd_congratulation_pattern(self, usernames, years_counts):
+        pattern = f'.*'
+        for name, count in zip(usernames, years_counts):
+            pattern += \
+                f'\n@{name} has been a part of our team for {count} {"year" if count==1 else "years"} and'
+
+        return pattern[:-4] + "!"
+
     def _wait_reminder(self):
         time.sleep(self._reminder_interval_time)
 
+    def test_fwd_set_for_admin(self):
+        self.switch_channel(self._bot_name)
+        self.send_message('{} fwd set {} {}'.
+                          format(self._bot_name, self.username,
+                                 self._fwd_date))
+
+        assert self.check_latest_response_with_retries(
+            "Saving {}'s first working day.".format(self.username))
+
+    def test_fwd_reminder_for_admin(self):
+        self.choose_general_channel()
+
+        assert self.check_latest_response_with_retries(self._get_fwd_congratulation_pattern([self.username, ], [1, ]),
+                                                       match=True, attempts_number=80)
+
+    def test_fwd_set_for_new_user(self):
+        self.create_user()
+        close_btn = self.find_by_css('button[data-action="close"]')
+
+        assert len(close_btn)
+
+        close_btn.click()
+        self.switch_channel(self._bot_name)
+        self.send_message('{} fwd set {} {}'.
+                          format(self._bot_name, self.test_username,
+                                 self._fwd_date))
+
+        assert self.check_latest_response_with_retries(
+            "Saving {}'s first working day.".format(self.test_username))
+
+    def test_fwd_reminder_for_new_user(self):
+        self.choose_general_channel()
+
+        assert self.check_latest_response_with_retries(self._get_fwd_congratulation_pattern(
+            [self.username, self.test_username], [1, 1]), match=True,
+            attempts_number=self._reminder_interval_time)
+
+    def test_fwd_list(self):
+        self.switch_channel(self._bot_name)
+        self.send_message("{} fwd list".format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(
+            'First working days list\n'
+            '@{} joined our team {}\n'
+            '@{} joined our team {}'.format(self.username,
+                                            self._fwd_date,
+                                            self.test_username,
+                                            self._fwd_date),
+            attempts_number=self._reminder_interval_time)
+        self.remove_user()
+
+        self.switch_channel(self._bot_name)
+        self.send_message("{} fwd list".format(self._bot_name))
+        assert self.check_latest_response_with_retries(
+            'First working days list\n'
+            '@{} joined our team {}'.format(self.username, self._fwd_date),
+            attempts_number=self._reminder_interval_time)
+
     #  base tests set
     def test_admins_birthday_set(self):
+        self.choose_general_channel()
         # TODO: test with invalid dates
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.username,
