@@ -13,6 +13,10 @@ services:
       - HOST=http://rocketchat:8006
       - BOT_NAME=meeseeks
       - BRANCH=${BRANCH}
+    volumes:
+      # The solution was borrowed from
+      # https://github.com/elgalu/docker-selenium/issues/20#issuecomment-133011186
+      - /dev/shm:/dev/shm
   rocketchat:
     image: cusdeb/rocketchat:0.70-amd64
     links: 
