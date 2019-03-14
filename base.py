@@ -32,7 +32,7 @@ from selenium.common.exceptions import (
     WebDriverException
 )
 from selenium.webdriver.support.wait import WebDriverWait
-from xvfbwrapper import Xvfb
+from xvfbwrapper_wrapper import XvfbWrap as Xvfb
 
 
 class OrderedClassMembers(type):

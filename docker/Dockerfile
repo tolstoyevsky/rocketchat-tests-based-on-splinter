@@ -1,5 +1,9 @@
 FROM python:3.7-slim-stretch
 
+ENV DISPLAY :100
+
+ENV XVFB_DISPLAY :100
+
 ENV PYTHONUNBUFFERED 0
 
 ENV TERM linux
@@ -23,6 +27,7 @@ RUN apt-get update -y \
     libnss3 \
     python-xvfbwrapper \
     x11-xkb-utils \
+    xclip \
     xvfb \
  && curl -O https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh \
  && chmod +x wait-for-it.sh \
