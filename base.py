@@ -56,7 +56,12 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         if os.path.isfile('/.docker'):
             # xvfb wrapper starting
             print('Using Xvfb')
-            self.xvfb = Xvfb()
+            kwargs = {}
+            if 'XVFB_WIDTH' in os.environ:
+                kwargs['width'] = os.environ['XVFB_WIDTH']
+            if 'XVFB_HEIGHT' in os.environ:
+                kwargs['height'] = os.environ['XVFB_HEIGHT']
+            self.xvfb = Xvfb(**kwargs)
             self.xvfb.start()
 
         options = Options()
