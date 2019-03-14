@@ -4,6 +4,10 @@ ENV PYTHONUNBUFFERED 0
 
 ENV TERM linux
 
+ENV XVFB_WIDTH 1920
+
+ENV XVFB_HEIGHT 1080
+
 WORKDIR /home/app/
 
 RUN apt-get update -y \
