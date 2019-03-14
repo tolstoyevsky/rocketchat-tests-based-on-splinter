@@ -13,23 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARGS=()
+docker_compose_yml=./docker/docker-compose.yml
 
-if [[ -f .env ]]; then
-    while IFS='' read -r line; do
-        IFS='=' read -ra VAR_VALUE <<< ${line}
-        if [[ ${#VAR_VALUE[@]} != 2 ]]; then
-            >&2 echo "To assign environment variables, specify them as VAR=VALUE."
-            exit 1
-        fi
-
-        ARGS+=(--env="${line}")
-    done < .env
+if [[ -z "$1" ]]; then
+    docker-compose -f "${docker_compose_yml}" up -d
+else
+    case "$1" in
+    down)
+        docker-compose -f "${docker_compose_yml}" down
+        echo down
+        ;;
+    logs)
+        docker-compose -f "${docker_compose_yml}" logs -f rocketchat-tests-based-on-splinter
+        echo logs
+        ;;
+    rm)
+        docker-compose -f "${docker_compose_yml}" rm
+        echo rm
+        ;;
+    esac
 fi
-
-cd ./docker/
-
-docker-compose rm -v -f
-docker-compose up --abort-on-container-exit --force-recreate
-# docker run -it --net=host --rm ${ARGS[@]} rocketchat-tests-based-on-splinter $*
 
