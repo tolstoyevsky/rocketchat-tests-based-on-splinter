@@ -37,6 +37,7 @@ services:
       # Rocket.Chat
       - AUTH_ATTEMPTS=240
       - EXTERNAL_SCRIPTS=git:tolstoyevsky/hubot-viva-las-vegas,git:tolstoyevsky/hubot-vote-or-die,git:tolstoyevsky/hubot-pugme,git:tolstoyevsky/hubot-happy-birthder
+      - RESPOND_TO_DM=true
       - REQUIRED_GROUPS=hr,leave-coordination
       - ROCKETCHAT_PASSSWORD=pass
       - ROCKETCHAT_URL=http://rocketchat:8006
