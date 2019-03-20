@@ -58,14 +58,12 @@ while true; do
     esac
 done
 
-RUN=(rc)
+RUN=()
 
 if [ "${SCRIPTS}" == "all" ]; then
     for i in *_tests.py; do
         test_name="${i%_tests.py}"
-        if [ "${test_name}" != "rc" ]; then
-            RUN+=("${test_name}")
-        fi
+        RUN+=("${test_name}")
     done
 else
     for i in "${SCRIPTS[@]}"; do
