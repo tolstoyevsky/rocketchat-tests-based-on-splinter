@@ -1,5 +1,7 @@
 FROM python:3.7-slim-stretch
 
+ENV DISPLAY :100
+
 ENV PYTHONUNBUFFERED 0
 
 ENV TERM linux
