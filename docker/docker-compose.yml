@@ -6,12 +6,6 @@ services:
     links:
       - "rocketchat:rocketchat"
     environment: 
-      - USERNAME=admin
-      - PASSWORD=qwerty12+
-      - ADDR=rocketchat
-      - PORT=8006
-      - HOST=http://rocketchat:8006
-      - BOT_NAME=meeseeks
       - BRANCH=${BRANCH}
     volumes:
       # The solution was borrowed from
@@ -37,22 +31,20 @@ services:
       # Rocket.Chat
       - AUTH_ATTEMPTS=240
       - EXTERNAL_SCRIPTS=git:tolstoyevsky/hubot-viva-las-vegas,git:tolstoyevsky/hubot-vote-or-die,git:tolstoyevsky/hubot-pugme,git:tolstoyevsky/hubot-happy-birthder
+      - HUBOT_NAME=meeseeks
       - RESPOND_TO_DM=true
       - REQUIRED_GROUPS=hr,leave-coordination
       - ROCKETCHAT_PASSSWORD=pass
       - ROCKETCHAT_URL=http://rocketchat:8006
       - ROCKETCHAT_USER=meeseeks
       # Redis
-      - REDIS_URL=redis://redis:16379
+      - REDIS_URL=redis://redis:6379
       # hubot-happy-birthder
       - CREATE_BIRTHDAY_CHANNELS=true
       - HAPPY_REMINDER_SCHEDULER=*/1 * * * *
-      - HUBOT_NAME=meeseeks
       - TENOR_API_KEY=TenorApiKey
       # hubot-viva-las-vegas
       - VIVA_REPORT_SCHEDULER=*/1 * * * *
       - VIVA_REMINDER_SCHEDULER=*/1 * * * *
   redis:
     image: cusdeb/redis:5.0-amd64
-    environment:
-    - REDIS_CONF_port=16379
