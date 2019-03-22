@@ -9,6 +9,7 @@ The set of tests includes:
 * the tests for the following Hubot scripts:
   * [hubot-happy-birthder](https://github.com/tolstoyevsky/hubot-happy-birthder)
   * [hubot-pugme](https://github.com/tolstoyevsky/hubot-pugme)
+  * [hubot-viva-las-vegas](https://github.com/tolstoyevsky/hubot-viva-las-vegas)
   * [hubot-vote-or-die](https://github.com/tolstoyevsky/hubot-vote-or-die)
 
 ## Prerequisites
@@ -182,6 +183,16 @@ Note that the tests are very sensible to:
   <tr>
     <td>CREATE_BIRTHDAY_CHANNELS</td>
     <td>true</td>
+  </tr>
+  <tr>
+    <th align="center" colspan="3">hubot-viva-las-vegas</th>
+  </tr>
+  <tr>
+    <td colspan="3">Ensure that the most of the hubot-viva-las-vegas parameters are set to default values. See the description for all the parameters related to the script in its original <a href="https://github.com/tolstoyevsky/hubot-viva-las-vegas/blob/master/README.md">README</a>.</td>
+  </tr>
+  <tr>
+    <td>VIVA_REMINDER_SCHEDULER</td>
+    <td>/1 * * * * *</td>
   </tr>
 </table>
 
