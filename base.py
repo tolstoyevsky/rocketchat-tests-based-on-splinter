@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Module with basic building blocks for tests. """
+
 import collections
 import os.path
 import re
@@ -36,19 +38,25 @@ from xvfbwrapper import Xvfb
 
 
 class OrderedClassMembers(type):
+    """Metaclass for producing the classes which remember the order of the
+    methods added to them.
+    """
+
     @classmethod
-    def __prepare__(mcs, name, bases):
+    def __prepare__(cls, _name, _bases):
         return collections.OrderedDict()
 
-    def __new__(mcs, name, bases, classdict):
+    def __new__(cls, name, bases, classdict):
         exception = ('__module__', '__qualname__')
         classdict['__ordered__'] = \
             [key for key in classdict.keys() if key not in exception]
 
-        return type.__new__(mcs, name, bases, classdict)
+        return type.__new__(cls, name, bases, classdict)
 
 
-class SplinterTestCase(metaclass=OrderedClassMembers):
+class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-many-instance-attributes
+    """Base class for all the tests based on Splinter. """
+
     def __init__(self, addr, browser_window_size=(1920, 1080),
                  page_load_timeout=30, sticky_timeout=30):
         setupterm()
@@ -83,7 +91,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         self._pre_test_cases = []
         self._test_cases = []
         self._post_test_cases = []
-        for method in self.__ordered__:
+        for method in self.__ordered__:  # pylint: disable=no-member
             if method.startswith('test_'):
                 self._test_cases.append(method)
 
@@ -107,12 +115,24 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         return self.browser.find_by_xpath(xpath)
 
     def schedule_pre_test_case(self, test_case_name):
+        """Schedules the specified test case as a pre-test case (i.e. the test
+        case which will be run before other test cases).
+        """
+
         self._pre_test_cases.append(test_case_name)
 
     def schedule_test_case(self, test_case_name):
+        """Schedules the specified test case which will be run in the same
+        order as it appears in the class.
+        """
+
         self._test_cases.append(test_case_name)
 
     def schedule_post_test_case(self, test_case_name):
+        """Schedules the specified test case as a post-test case (i.e. the test
+        case which will be run after other test cases).
+        """
+
         self._post_test_cases.append(test_case_name)
 
     def _run(self):
@@ -137,9 +157,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
             except AssertionError:
                 exit_code = 1
                 self._color_in_red('failed')
-                _, _, tb = sys.exc_info()
-                tb_info = traceback.extract_tb(tb)
-                filename, line, _, text = tb_info[-1]
+                _, _, tbe = sys.exc_info()
+                tb_info = traceback.extract_tb(tbe)
+                _, line, _, text = tb_info[-1]
 
                 print('Assertion error occurred on line {} in statement {}'.
                       format(line, text))
@@ -162,6 +182,8 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
 
 
     def run(self):
+        """Runs all the available test cases. """
+
         exit_code = 0
 
         try:
@@ -170,11 +192,11 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         except KeyboardInterrupt:
             exit_code = 130
             print('\nThe process was stopped by pressing Ctrl+C.')
-            
+
         except (NoSuchWindowException, WebDriverException):
             exit_code = 1
             print('\nThe process was stopped because the web driver exception has occurred.')
-        
+
         except ConnectionError:
             exit_code = 1
             print('\nFailed to connect.')
@@ -195,7 +217,9 @@ class SplinterTestCase(metaclass=OrderedClassMembers):
         return exit_code
 
 
-class RocketChatTestCase(SplinterTestCase):
+class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance-attributes
+    """Test cases related to Rocket.Chat. """
+
     def __init__(self, addr, username, password, create_test_user=True,
                  **kwargs):
         SplinterTestCase.__init__(self, addr, **kwargs)
@@ -226,11 +250,14 @@ class RocketChatTestCase(SplinterTestCase):
     def check_latest_response_with_retries(self, expected_text,
                                            match=False, messages_number=1,
                                            attempts_number=30):
-        for i in range(attempts_number):
+        """Checks the latest response from the bot with the specified number of
+        retries if needed. """
+
+        for _ in range(attempts_number):
             latest_msg = self.browser.driver.find_elements_by_css_selector(
                 'div.body.color-primary-font-color ')
 
-            assert len(latest_msg)
+            assert latest_msg
 
             latest_msg = latest_msg[-messages_number:]
             try:
@@ -252,16 +279,20 @@ class RocketChatTestCase(SplinterTestCase):
         return False
 
     def get_message_by_number(self, number):
+        """Fetches the message by its number. """
+
         messages = self.browser.driver.find_elements_by_css_selector(
             'div.body.color-primary-font-color ')
         assert len(messages) >= abs(number)
         return messages[number]
 
     def switch_channel(self, channel_name):
+        """Switches the current channel to the specified one. """
+
         channels = self.browser.driver.find_elements_by_css_selector(
             'div.sidebar-item__ellipsis'
         )
-        assert len(channels)
+        assert channels
 
         channel = list(
             filter(lambda elem: elem.text == channel_name, channels))
@@ -271,10 +302,17 @@ class RocketChatTestCase(SplinterTestCase):
                                            channel[0])
 
     def choose_general_channel(self):
+        """Switches the current channel to general. """
+
         self.switch_channel('general')
 
-    def check_with_retries(self, func, *args, expected_res=True, attemps_num=30):
-        for i in range(attemps_num):
+    @staticmethod
+    def check_with_retries(func, *args, expected_res=True, attemps_num=30):
+        """Runs the specified function and compares its return value with the
+        specified one. The comparison is done with retries if needed.
+        """
+
+        for _ in range(attemps_num):
             res = func(*args)
 
             if res == expected_res:
@@ -286,6 +324,10 @@ class RocketChatTestCase(SplinterTestCase):
         return res
 
     def does_username_exist(self, username):
+        """Checks if the specified username belongs to one of the users from
+        the user list.
+        """
+
         response = self.rocket.users_list().json()
 
         result = [
@@ -296,6 +338,10 @@ class RocketChatTestCase(SplinterTestCase):
         return result != []
 
     def does_email_exist(self, email):
+        """Checks if the specified email belongs to one of the users from the
+        user list.
+        """
+
         response = self.rocket.users_list().json()
 
         emails = []
@@ -306,8 +352,9 @@ class RocketChatTestCase(SplinterTestCase):
 
         return result != []
 
+    def create_user(self):  # pylint: disable=too-many-locals
+        """Creates a test user. """
 
-    def create_user(self):
         does_username_exist = self.check_with_retries(
             self.does_username_exist,
             self.test_username,
@@ -333,75 +380,75 @@ class RocketChatTestCase(SplinterTestCase):
         users_btn = self.browser.driver.find_elements_by_css_selector(
             'a.sidebar-item__link[aria-label="Users"]')
 
-        assert len(users_btn)
+        assert users_btn
 
         self.browser.driver.execute_script("arguments[0].click();",
                                            users_btn[0])
 
         add_user_btn = self.find_by_css('button[aria-label="Add User"]')
 
-        assert len(add_user_btn)
+        assert add_user_btn
 
         add_user_btn.click()
 
         input_name_el = self.find_by_css('input#name')
 
-        assert len(input_name_el)
+        assert input_name_el
 
         input_name_el.first.fill(self.test_full_name)
 
         input_username_el = self.find_by_css('input#username')
 
-        assert len(input_username_el)
+        assert input_username_el
 
         input_username_el.first.fill(self.test_username)
 
         input_email_el = self.find_by_css('input#email')
 
-        assert len(input_email_el)
+        assert input_email_el
 
         input_email_el.first.fill(self.test_email)
 
         verified_btn = self.find_by_css('label.rc-switch__label')
 
-        assert len(verified_btn)
+        assert verified_btn
 
         verified_btn.first.click()
 
         input_password_el = self.find_by_css('input#password')
 
-        assert len(input_password_el)
+        assert input_password_el
 
         input_password_el.first.fill(self.test_password)
 
         verified_btn = self.find_by_css('label.rc-switch__label')
 
-        assert len(verified_btn)
+        assert verified_btn
 
         verified_btn.last.click()
 
         role_option = self.find_by_css('option[value="user"]')
 
-        assert len(role_option)
+        assert role_option
 
         role_option.first.click()
 
         add_role_btn = self.find_by_css('button#addRole')
 
-        assert len(add_role_btn)
+        assert add_role_btn
 
         add_role_btn.first.click()
 
         # Do not send welcome email
         welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
 
-        assert len(welcome_ckbx)
+        assert welcome_ckbx
 
         welcome_ckbx.first.click()
 
         save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
 
-        assert len(save_btn)
+        assert save_btn
 
         save_btn.first.click()
 
@@ -412,6 +459,8 @@ class RocketChatTestCase(SplinterTestCase):
         assert does_username_exist
 
     def login(self, use_test_user=False):
+        """Logs in into the Rocket.Chat server. """
+
         self.browser.fill('emailOrUsername',
                           self.test_username
                           if use_test_user else self.username)
@@ -421,15 +470,17 @@ class RocketChatTestCase(SplinterTestCase):
 
         login_btn = self.find_by_css('.rc-button.rc-button--primary.login')
 
-        assert len(login_btn)
+        assert login_btn
 
         login_btn.click()
 
         welcome_text = self.browser.find_by_text('Welcome to Rocket.Chat!')
 
-        assert len(welcome_text)
+        assert welcome_text
 
     def logout(self):
+        """Logs out of the Rocket.Chat server. """
+
         avatar = self.find_by_css('.avatar')
         assert avatar
         avatar.click()
@@ -442,7 +493,7 @@ class RocketChatTestCase(SplinterTestCase):
         for _ in range(attempts_number):
             info_table = self.browser.find_by_css(".admin-table-row")
 
-            assert len(info_table)
+            assert info_table
 
             version_row = info_table.first.text
             try:
@@ -454,10 +505,14 @@ class RocketChatTestCase(SplinterTestCase):
         return ''
 
     def test_check_version(self):
+        """Checks if the Rocket.Chat version equals to the one the tests are
+        intended for.
+        """
+
         options_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
         )
-        assert len(options_btn)
+        assert options_btn
         options_btn.last.click()
 
         administration_btn = self.browser.find_by_css('.rc-popover__item-text')
@@ -467,7 +522,7 @@ class RocketChatTestCase(SplinterTestCase):
         info_btn = self.browser.driver.find_elements_by_css_selector(
             'a.sidebar-item__link[aria-label="Info"]')
 
-        assert len(info_btn)
+        assert info_btn
 
         self.browser.driver.execute_script("arguments[0].click();",
                                            info_btn[0])
@@ -480,7 +535,7 @@ class RocketChatTestCase(SplinterTestCase):
 
         close_btn = self.find_by_css('button[data-action="close"]')
 
-        assert len(close_btn)
+        assert close_btn
 
         close_btn.click()
 
@@ -490,6 +545,8 @@ class RocketChatTestCase(SplinterTestCase):
         return not windows
 
     def remove_user(self):
+        """Removes a test user. """
+
         does_username_exist = self.check_with_retries(
             self.does_username_exist,
             self.test_username
@@ -499,7 +556,7 @@ class RocketChatTestCase(SplinterTestCase):
         options_btn = self.browser.driver.find_elements_by_css_selector(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
 
-        assert len(options_btn)
+        assert options_btn
 
         self.browser.driver.execute_script('arguments[0].click();',
                                            options_btn[-1])
@@ -510,7 +567,7 @@ class RocketChatTestCase(SplinterTestCase):
         users_btn = self.browser.driver.find_elements_by_css_selector(
             'a.sidebar-item__link[aria-label="Users"]')
 
-        assert len(users_btn)
+        assert users_btn
 
         self.browser.driver.execute_script("arguments[0].click();",
                                            users_btn[0])
@@ -519,7 +576,7 @@ class RocketChatTestCase(SplinterTestCase):
             '//td[@class="border-component-color"][text()="{0}"]'.
             format(self.test_username))
 
-        assert len(selected_user)
+        assert selected_user
 
         selected_user.first.click()
 
@@ -529,7 +586,7 @@ class RocketChatTestCase(SplinterTestCase):
                 '[text()="Delete"]'
             )
 
-            assert len(delete_btn)
+            assert delete_btn
 
         except AssertionError:
             more_btn = self.find_by_css(
@@ -537,7 +594,7 @@ class RocketChatTestCase(SplinterTestCase):
                 '[aria-label="More"]'
             )
 
-            assert len(more_btn)
+            assert more_btn
 
             more_btn.first.click()
 
@@ -546,13 +603,13 @@ class RocketChatTestCase(SplinterTestCase):
                 '/span[text()="Delete"]'
             )
 
-            assert len(delete_btn)
+            assert delete_btn
 
         delete_btn.first.click()
 
         confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
 
-        assert len(confirm_btn)
+        assert confirm_btn
 
         confirm_btn.first.click()
 
@@ -562,7 +619,7 @@ class RocketChatTestCase(SplinterTestCase):
         close_btn = self.browser.driver.find_elements_by_css_selector(
             'button[data-action="close"]')
 
-        assert len(close_btn)
+        assert close_btn
 
         self.browser.driver.execute_script('arguments[0].click();',
                                            close_btn[0])
@@ -575,11 +632,13 @@ class RocketChatTestCase(SplinterTestCase):
         assert not does_username_exist
 
     def send_message(self, message_text):
+        """Sends the specified message to the current channel. """
+
         self.browser.fill('msg', message_text)
 
         send_msg_btn = self.find_by_css('svg.rc-icon.rc-input__icon-svg.'
                                         'rc-input__icon-svg--send')
 
-        assert len(send_msg_btn)
+        assert send_msg_btn
 
         send_msg_btn.first.click()
