@@ -48,16 +48,14 @@ pip3 install -r requirements.txt
 
 ## Getting started
 
-The following examples are based on the `run_tests.sh` script. You can use `run_tests_in_container.sh` instead if you want to run the tests in the Docker container. Don't forget to build the Docker image as described in [this section](#docker).
-
-Now you have the following options:
+You have the following options:
 * run only the general Rocket.Chat tests;
 * run the general Rocket.Chat tests with either all the available Hubot scripts tests (see [Features](#features)) or only with specified ones.
 
 To run only the general Rocket.Chat tests, go to the root of the project and execute
 
 ```
-./run_tests.sh
+./run_tests.sh -s rc
 ```
 
 To run the general Rocket.Chat tests with all the available Hubot scripts, execute
@@ -73,6 +71,26 @@ To specify a particular Hubot script test, play with the `-s` option. In the fol
 ```
 
 Note, that the name of the target test is the name of its Python module without the `_tests.py` prefix.
+
+To run all the available tests in the Docker container, execute
+
+```
+./run_tests_in_container.sh
+```
+
+To see only the logs related to the tests, execute
+
+```
+./run_tests_in_container.sh logs
+```
+
+In comparison with `run_tests.sh` all the magic in `run_tests_in_container.sh` is done not via the command line, but via the `docker/docker-compose.yml` file. So, in order to specify a particular Hubot script test and run it in the Docker container, edit the `command` parameter. Under the hood the value of the parameter will be passed to `run_tests.sh`, so have a look at the examples above.
+
+When the tests are done or you simply want them to be interrupted, execute
+
+```
+./run_tests_in_container.sh down
+```
 
 ## Configuration
 
