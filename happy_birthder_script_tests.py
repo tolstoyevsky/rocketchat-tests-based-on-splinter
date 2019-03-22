@@ -108,9 +108,12 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
     def test_fwd_list(self):
         self.switch_channel(self._bot_name)
         self.send_message("{} fwd list".format(self._bot_name))
-
+        for i in range(5):
+            print(list(map(lambda elem: elem.text, self.browser.driver.find_elements_by_css_selector(
+                'div.body.color-primary-font-color ')[-4:])))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(
-            'First working days list\n'
+            '*First working days list*\n'
             '@{} joined our team {}\n'
             '@{} joined our team {}'.format(self.username,
                                             self._fwd_date,
@@ -122,7 +125,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.switch_channel(self._bot_name)
         self.send_message("{} fwd list".format(self._bot_name))
         assert self.check_latest_response_with_retries(
-            'First working days list\n'
+            '*First working days list*\n'
             '@{} joined our team {}'.format(self.username, self._fwd_date),
             attempts_number=self._reminder_interval_time)
 
