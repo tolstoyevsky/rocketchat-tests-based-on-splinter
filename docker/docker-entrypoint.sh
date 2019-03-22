@@ -17,15 +17,15 @@ set -e
 
 set -x
 
-export ADDR=${ADDR:="127.0.0.1"}
+export ADDR=${ADDR:="rocketchat"}
 
-export BOT_NAME=${BOT_NAME="meeseeks"}
+export BOT_NAME=${BOT_NAME:="meeseeks"}
 
 export PORT=${PORT:=8006}
 
-export USERNAME=${USERNAME:=""}
+export USERNAME=${USERNAME:="admin"}
 
-export PASSWORD=${PASSWORD:=""}
+export PASSWORD=${PASSWORD:="pass"}
 
 export PUGS_LIMIT=${PUGS_LIMIT:=5}
 
