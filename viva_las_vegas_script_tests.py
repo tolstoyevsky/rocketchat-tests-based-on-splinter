@@ -16,8 +16,8 @@
 
 """Tests related to the hubot-viva-las-vegas script. """
 
+from argparse import ArgumentParser
 from datetime import datetime, timedelta
-from optparse import OptionParser  # pylint: disable=deprecated-module
 
 from base import RocketChatTestCase
 
@@ -466,14 +466,14 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
 def main():
     """The main entry point. """
 
-    parser = OptionParser(usage='usage: %prog [options] arguments')
-    parser.add_option('-a', '--host', dest='host',
-                      help='allows specifying admin username')
-    parser.add_option('-u', '--username', dest='username',
-                      help='allows specifying admin username')
-    parser.add_option('-p', '--password', dest='password',
-                      help='allows specifying admin password')
-    options, _ = parser.parse_args()
+    parser = ArgumentParser(description='usage: %prog [options] arguments')
+    parser.add_argument('-a', '--host', dest='host', type=str,
+                        help='allows specifying admin username')
+    parser.add_argument('-u', '--username', dest='username', type=str,
+                        help='allows specifying admin username')
+    parser.add_argument('-p', '--password', dest='password', type=str,
+                        help='allows specifying admin password')
+    options = parser.parse_args()
 
     if not options.host:
         parser.error('Host is not specified')
