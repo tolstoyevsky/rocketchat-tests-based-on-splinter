@@ -63,7 +63,7 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
 
         if os.path.isfile('/.docker'):
             # xvfb wrapper starting
-            print('Using Xvfb')
+            sys.stderr.write('Using Xvfb\n')
             kwargs = {}
             if 'XVFB_WIDTH' in os.environ:
                 kwargs['width'] = os.environ['XVFB_WIDTH']
@@ -139,8 +139,8 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
         exit_code = 0
 
         if not self._test_cases:
-            print('There is nothing to run since the number of test cases is '
-                  '0.')
+            sys.stderr.write('There is nothing to run since the number of test cases is '
+                             '0.\n')
             return exit_code
 
         start_time = time.time()
@@ -148,7 +148,8 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
                          self._test_cases + \
                          self._post_test_cases:
             method = getattr(self, test_case)
-            print('Running {}...'.format(test_case), end=' ', flush=True)
+            sys.stderr.write('Running {}... '.format(test_case))
+            sys.stderr.flush()
 
             try:
                 method()
@@ -161,13 +162,15 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
                 tb_info = traceback.extract_tb(tbe)
                 _, line, _, text = tb_info[-1]
 
-                print('Assertion error occurred on line {} in statement {}'.
-                      format(line, text))
+                sys.stderr.write(
+                    'Assertion error occurred on line {} in statement {}\n' \
+                        .format(line, text)
+                )
 
                 self._failed_number += 1
 
         tests_number = len(self._test_cases)
-        print('Ran {} test{} in {:.6f}s.'.format(
+        sys.stderr.write('Ran {} test{} in {:.6f}s.\n'.format(
             tests_number,
             's' if tests_number > 1 else '',
             time.time() - start_time), end=' ')
@@ -191,24 +194,26 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
 
         except KeyboardInterrupt:
             exit_code = 130
-            print('\nThe process was stopped by pressing Ctrl+C.')
+            sys.stderr.write('\nThe process was stopped by pressing Ctrl+C.\n')
 
         except (NoSuchWindowException, WebDriverException):
             exit_code = 1
-            print('\nThe process was stopped because the web driver exception has occurred.')
+            sys.stderr.write(
+                '\nThe process was stopped because the web driver exception has occurred.\n'
+            )
 
         except ConnectionError:
             exit_code = 1
-            print('\nFailed to connect.')
+            sys.stderr.write('\nFailed to connect.\n')
 
         except requests.ConnectionError:
             exit_code = 1
-            print('\nThe internet connection was lost')
+            sys.stderr.write('\nThe internet connection was lost\n')
 
         finally:
             for post_test_case in self._post_test_cases:
                 method = getattr(self, post_test_case)
-                print('Running clean up {}...'.format(post_test_case))
+                sys.stderr.write('Running clean up {}...\n'.format(post_test_case))
                 method()
 
             if os.path.isfile('/.docker'):
