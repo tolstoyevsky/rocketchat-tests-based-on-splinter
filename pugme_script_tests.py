@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from base import RocketChatTestCase
 
@@ -50,16 +50,16 @@ class PugmeScriptTestCase(RocketChatTestCase):
 
 
 def main():
-    parser = OptionParser(usage='usage: %prog [options] arguments')
-    parser.add_option('-a', '--host', dest='host',
-                      help='allows specifying domain or IP of the Rocket.Chat host')
-    parser.add_option('-u', '--username', dest='username',
-                      help='allows specifying admin username')
-    parser.add_option('-p', '--password', dest='password',
-                      help='allows specifying admin password')
-    parser.add_option('-l', '--pugs_limit', dest='pugs_limit',
-                      help='allows specifying limit for pugs')
-    options, args = parser.parse_args()
+    parser = ArgumentParser(description='usage: %prog [options] arguments')
+    parser.add_argument('-a', '--host', dest='host', type=str,
+                        help='allows specifying domain or IP of the Rocket.Chat host')
+    parser.add_argument('-u', '--username', dest='username', type=str,
+                        help='allows specifying admin username')
+    parser.add_argument('-p', '--password', dest='password', type=str,
+                        help='allows specifying admin password')
+    parser.add_argument('-l', '--pugs_limit', dest='pugs_limit', type=int,
+                        help='allows specifying limit for pugs')
+    options = parser.parse_args()
 
     if not options.host:
         options.host = 'http://127.0.0.1:8006'

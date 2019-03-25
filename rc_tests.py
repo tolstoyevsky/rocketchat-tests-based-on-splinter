@@ -23,7 +23,7 @@ import datetime
 import os
 import sys
 import uuid
-from optparse import OptionParser  # pylint: disable=deprecated-module
+from argparse import ArgumentParser
 
 import pyperclip
 from selenium.webdriver.common.keys import Keys
@@ -1059,15 +1059,14 @@ class GeneralTestCase(RocketChatTestCase):
 
 def main():
     """The main entry point. """
-
-    parser = OptionParser(usage='usage: %prog [options] arguments')
-    parser.add_option('-a', '--host', dest='host',
-                      help='allows specifying domain or IP of the Rocket.Chat host')
-    parser.add_option('-u', '--username', dest='username',
-                      help='allows specifying admin username')
-    parser.add_option('-p', '--password', dest='password',
-                      help='allows specifying admin password')
-    options, _ = parser.parse_args()
+    parser = ArgumentParser(description='usage: %prog [options] arguments')
+    parser.add_argument('-a', '--host', dest='host', type=str,
+                        help='allows specifying domain or IP of the Rocket.Chat host')
+    parser.add_argument('-u', '--username', dest='username', type=str,
+                        help='allows specifying admin username')
+    parser.add_argument('-p', '--password', dest='password', type=str,
+                        help='allows specifying admin password')
+    options = parser.parse_args()
 
     if not options.host:
         options.host = 'http://127.0.0.1:8006'

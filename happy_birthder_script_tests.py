@@ -22,9 +22,9 @@
 import re
 import sys
 import time
-
+from argparse import ArgumentParser
 from datetime import datetime, timedelta
-from optparse import OptionParser  # pylint: disable=deprecated-module
+
 from selenium.webdriver.support.wait import WebDriverWait
 
 from base import RocketChatTestCase
@@ -637,18 +637,18 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
 def main():
     """The main entry point. """
 
-    parser = OptionParser(usage='usage: %prog [options] arguments')
-    parser.add_option('-a', '--host', dest='host',
-                      help='allows specifying domain or IP of the Rocket.Chat host')
-    parser.add_option('-u', '--username', dest='username',
-                      help='allows specifying admin username')
-    parser.add_option('-p', '--password', dest='password',
-                      help='allows specifying admin password')
-    parser.add_option('-w', '--wait', dest='wait',
-                      help='allows specifying time '
-                           'for waiting reminder\'s work(secs)')
+    parser = ArgumentParser(description='usage: %prog [options] arguments')
+    parser.add_argument('-a', '--host', dest='host', type=str,
+                        help='allows specifying domain or IP of the Rocket.Chat host')
+    parser.add_argument('-u', '--username', dest='username', type=str,
+                        help='allows specifying admin username')
+    parser.add_argument('-p', '--password', dest='password', type=str,
+                        help='allows specifying admin password')
+    parser.add_argument('-w', '--wait', dest='wait', type=int,
+                        help="allows specifying time "
+                             "for waiting reminder\'s work(secs)")
 
-    options, _ = parser.parse_args()
+    options = parser.parse_args()
 
     if not options.host:
         options.host = 'http://127.0.0.1:8006'
