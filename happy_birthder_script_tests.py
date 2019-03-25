@@ -48,7 +48,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     def _get_channel_pattern(self, name, date):
         d_m = date[:-5]
-        return f'{name}-birthday-channel-{d_m}-id[0-9]{{3}}'
+        return f'{name}-birthday-channel-{d_m}-id[0-9]{{2,3}}'
 
     def _get_congratulation_pattern(self, username):
         pattern = f'https?://media.tenor.com/images/[0-9a-z]*/tenor.gif\n' \
@@ -157,12 +157,20 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
     #  tests set for requesting birthdays set
     def test_specifying_date_birth_by_admin(self):
         self.switch_channel(self._bot_name)
+        for i in range(3):
+            print(list(map(lambda elem: elem.text,
+                           self.browser.driver.find_elements_by_css_selector('div.body.color-primary-font-color '))))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(
             'Hmm...\n'
             'It looks like you forgot to set the date of birth.\n'
-            'Please enter it (DD.MM.YYYY).'
-        )
+            'Please enter it (DD.MM.YYYY).',
+            attempts_number=self._reminder_interval_time)
         self.send_message(self._test_birthday)
+        for i in range(3):
+            print(list(map(lambda elem: elem.text,
+                           self.browser.driver.find_elements_by_css_selector('div.body.color-primary-font-color '))))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(
             'I memorized you birthday, well done! 😉'
         )
@@ -175,7 +183,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         close_btn.click()
         self.logout()
         self.login(use_test_user=True)
-        self._wait_reminder()
+        #self._wait_reminder()
         self.switch_channel(self._bot_name)
         try:
             assert self.check_latest_response_with_retries(
@@ -203,6 +211,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.test_username,
                                  test_date))
+        for i in range(3):
+            print(list(map(lambda elem: elem.text,
+                           self.browser.driver.find_elements_by_css_selector('div.body.color-primary-font-color '))))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(
             "Saving {}'s birthday.".format(self.test_username)
         )
@@ -219,6 +231,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         pattern = self._get_channel_pattern(self.test_username,
                                             self._get_date_with_shift(0))
 
+        print(lst_of_channels[-1])
         assert bool(re.match(pattern, lst_of_channels[-1]))
 
         self.switch_channel(lst_of_channels[-1])
@@ -244,6 +257,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     def test_reminder_of_upcoming_birthday_7_days_in_advance(self):
         self.switch_channel(self._bot_name)
+        for i in range(3):
+            print(list(map(lambda elem: elem.text,
+                           self.browser.driver.find_elements_by_css_selector('div.body.color-primary-font-color '))))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(
             '@{} is having a birthday on {}.'
             .format(self.test_username, self._get_date_with_shift(7)[:-5])
@@ -255,6 +272,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                           format(self._bot_name, self.test_username,
                                  self._get_date_with_shift(1)))
         self.switch_channel(self._bot_name)
+        for i in range(3):
+            print(list(map(lambda elem: elem.text,
+                           self.browser.driver.find_elements_by_css_selector('div.body.color-primary-font-color '))))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(
             '@{} is having a birthday tomorrow.'.format(self.test_username),
             attempts_number=self._reminder_interval_time
@@ -289,6 +310,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                           format(self._bot_name, self.username,
                                  self._get_date_with_shift(0)))
         pattern = self._get_congratulation_pattern(self.username)
+        for i in range(3):
+            print(list(map(lambda elem: elem.text,
+                           self.browser.driver.find_elements_by_css_selector('div.body.color-primary-font-color '))))
+            time.sleep(1)
         assert self.check_latest_response_with_retries(pattern, match=True,
                                                        attempts_number=self._reminder_interval_time)
 
@@ -450,6 +475,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         channel_options[2].click()
 
         members_list = self.find_by_css('.rc-member-list__user')
+
+        #print(list(map(lambda elem: elem.text, members_list)))
 
         assert len(members_list) == 2
 

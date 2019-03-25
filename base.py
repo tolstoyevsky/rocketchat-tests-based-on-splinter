@@ -257,7 +257,9 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
             latest_msg = self.browser.driver.find_elements_by_css_selector(
                 'div.body.color-primary-font-color ')
 
-            assert latest_msg
+            if not latest_msg:
+                time.sleep(1)
+                continue
 
             latest_msg = latest_msg[-messages_number:]
             try:
