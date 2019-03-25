@@ -9,4 +9,5 @@ install:
 
 script:
   - pylint base.py
+  - pylint rc_tests.py
 
