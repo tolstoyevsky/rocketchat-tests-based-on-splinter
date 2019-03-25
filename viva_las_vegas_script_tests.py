@@ -14,13 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests related to the hubot-viva-las-vegas script. """
+
 from datetime import datetime, timedelta
-from optparse import OptionParser
+from optparse import OptionParser  # pylint: disable=deprecated-module
 
 from base import RocketChatTestCase
 
+FROM_MSG = 'Ok, с какого числа? (дд.мм)'
 
-class VivaLasVegasScriptTestCase(RocketChatTestCase):
+INVALID_DATE_MSG = 'Указанная дата является невалидной. Попробуй еще раз.'
+
+PERMISSION_DENIED_MSG = 'У тебя недостаточно прав для этой команды 🙄'
+
+TO_MSG = 'Отлично, по какое? (дд.мм)'
+
+
+class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-attributes
+    """Tests for the hubot-viva-las-vegas script. """
+
     def __init__(self, addr, username, password, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
 
@@ -32,31 +44,34 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
 
         self._dividing_message = 'Hello from dividing message for tests'
 
-        self._vacation_start_date = (
-                datetime.now() + timedelta(days=15)).strftime('%d.%m')
+        self._vacation_start_date = self._figure_out_date(15)
 
-        self._too_close_start_date_1 = (
-                datetime.now() + timedelta(days=1)).strftime('%d.%m')
+        self._too_close_start_date_1 = self._figure_out_date(1)
 
-        self._too_close_start_date_2 = (
-                datetime.now() + timedelta(days=2)).strftime('%d.%m')
+        self._too_close_start_date_2 = self._figure_out_date(2)
 
-        self._vacation_end_date = (
-                datetime.now() + timedelta(days=29)).strftime('%d.%m')
+        self._vacation_end_date = self._figure_out_date(29)
 
-        self._too_long_end_date = (
-                datetime.now() + timedelta(days=44)).strftime('%d.%m')
+        self._too_long_end_date = self._figure_out_date(44)
 
-        self._max_response_date = (
-                datetime.now() + timedelta(days=7)).strftime('%d.%m')
+        self._max_response_date = self._figure_out_date(7)
 
         self._invalid_dates = ('99.99', '31.09', '30.02')
+
+    #
+    # Private methods
+    #
+
+    @staticmethod
+    def _figure_out_date(days, date_format='%d.%m'):
+        return (datetime.now() + timedelta(days=days)).strftime(date_format)
 
     def _send_birthday_to_bot(self):
         self.switch_channel(self._bot_name)
         self.send_message('01.01.1990')
 
-    def _get_pre_weekends_dates(self):
+    @staticmethod
+    def _get_pre_weekends_dates():
         date = datetime.now() + timedelta(days=15)
         day = date.weekday()
         shift = 4 - day if day < 4 else 6 - day + 4
@@ -68,8 +83,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
     def _send_leave_request(self):
         self.send_message('{} хочу в отпуск'.format(self._bot_name))
 
-        assert self.check_latest_response_with_retries(
-            'Ok, с какого числа? (дд.мм)')
+        assert self.check_latest_response_with_retries(FROM_MSG)
 
         self.send_message('{} хочу в отпуск'.format(self._bot_name))
 
@@ -81,17 +95,15 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         for date in self._invalid_dates:
             self.send_message('{0} {1}'.format(self._bot_name, date))
 
-            assert self.check_latest_response_with_retries(
-                'Указанная дата является невалидной. Попробуй еще раз.')
+            assert self.check_latest_response_with_retries(INVALID_DATE_MSG)
 
         self.send_message('{0} {1}'.format(self._bot_name,
                                            self._too_close_start_date_1))
 
         assert self.check_latest_response_with_retries(
             'Нужно запрашивать отпуск минимум за 7 дней, а твой - уже завтра. '
-            'Попробуй выбрать дату позднее {}.'.format((
-                    datetime.now() + timedelta(days=7)).strftime(
-                '%d.%m.%Y')))
+            'Попробуй выбрать дату позднее {}.'.format(
+                self._figure_out_date(7, '%d.%m.%Y')))
 
         self.send_message(
             '{0} {1}'.format(self._bot_name, self._too_close_start_date_2))
@@ -99,33 +111,30 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries(
             'Нужно запрашивать отпуск минимум за 7 дней, '
             'а твой - только через 2 дня. '
-            'Попробуй выбрать дату позднее {}.'.format((
-                        datetime.now() + timedelta(days=7)).strftime(
-                '%d.%m.%Y')))
+            'Попробуй выбрать дату позднее {}.'.format(
+                self._figure_out_date(7, '%d.%m.%Y')))
 
         self.send_message('{0} {1}'.format(self._bot_name,
                                            self._vacation_start_date))
-        assert self.check_latest_response_with_retries(
-            'Отлично, по какое? (дд.мм)')
+        assert self.check_latest_response_with_retries(TO_MSG)
 
     def _input_end_date(self):
         for date in self._invalid_dates:
             self.send_message('{0} {1}'.format(self._bot_name, date))
 
-            assert self.check_latest_response_with_retries(
-                'Указанная дата является невалидной. Попробуй еще раз.')
+            assert self.check_latest_response_with_retries(INVALID_DATE_MSG)
 
         self.send_message('{0} {1}'.format(self._bot_name,
                                            self._too_long_end_date))
 
         assert self.check_latest_response_with_retries(
-            'Отпуск продолжительностью \d* д(ня|ней|ень).*', match=True)
+            r'Отпуск продолжительностью \d* д(ня|ней|ень).*', match=True)
 
         self.send_message('{0} {1}'.format(self._bot_name,
                                            self._vacation_end_date))
 
         assert self.check_latest_response_with_retries(
-            'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
+            r'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
             match=True)
 
     def _confirm_dates(self, confirm=True):
@@ -152,7 +161,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         else:
 
             assert self.check_latest_response_with_retries(
-                'У тебя недостаточно прав для этой команды 🙄')
+                PERMISSION_DENIED_MSG)
 
     def _reject_request(self, username=None, is_admin=True):
         if not username:
@@ -162,12 +171,13 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         if is_admin:
 
             assert self.check_latest_response_with_retries(
-                "Заявка @{} отклонена. "
-                "Я отправлю этому пользователю уведомление об этом.".format(username))
+                'Заявка @{} отклонена. '
+                'Я отправлю этому пользователю уведомление об '
+                'этом.'.format(username))
         else:
 
             assert self.check_latest_response_with_retries(
-                'У тебя недостаточно прав для этой команды 🙄')
+                PERMISSION_DENIED_MSG)
 
     def _cancel_approved_request(self, username=None, is_admin=True):
         if not username:
@@ -181,7 +191,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         else:
 
             assert self.check_latest_response_with_retries(
-                'У тебя недостаточно прав для этой команды 🙄')
+                PERMISSION_DENIED_MSG)
 
     def _send_dividing_message(self):
         self.send_message(self._dividing_message)
@@ -240,7 +250,13 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
             'Пользователь @{0} отменил '
             'заявку на отпуск пользователя @{0}.'.format(self.username))
 
+    #
+    # Public methods
+    #
+
     def test_sending_request_and_approving_it(self):
+        """Tests if it's possible to send a leave request and approve it. """
+
         self.choose_general_channel()
         self._send_leave_request()
         self._input_start_date()
@@ -250,6 +266,8 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._cancel_approved_request()
 
     def test_sending_request_and_rejecting_it(self):
+        """Tests if it's possible to send a leave request and reject it. """
+
         self._send_leave_request()
         self._input_start_date()
         self._input_end_date()
@@ -257,6 +275,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._reject_request()
 
     def test_approve_notification(self):
+        """Tests if it's possible to send a leave request, approve it and
+        receive the corresponding message from the bot.
+        """
+
         self.switch_channel(self._bot_name)
         self._send_dividing_message()
         self.choose_general_channel()
@@ -271,6 +293,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._cancel_approved_request()
 
     def test_reject_notification(self):
+        """Tests if it's possible to send a leave request, reject it and
+        receive the corresponding message from the bot.
+        """
+
         self.switch_channel(self._bot_name)
         self._send_dividing_message()
         self.choose_general_channel()
@@ -283,6 +309,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._check_reject_notification()
 
     def test_cancel_notification(self):
+        """Tests if it's possible to send a leave request, approve and cancel
+        it, and receive the corresponding message from the bot.
+        """
+
         self.choose_general_channel()
         self._send_leave_request()
         self._input_start_date()
@@ -297,23 +327,23 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._check_cancel_notification()
 
     def test_for_adding_weekends_to_vacation(self):
+        """Tests if the bot extends the length of the vacation period with
+        weekends if the end of the period is on Friday.
+        """
+
         self.send_message('{} хочу в отпуск'.format(self._bot_name))
 
-        assert self.check_latest_response_with_retries(
-            'Ok, с какого числа? (дд.мм)')
+        assert self.check_latest_response_with_retries(FROM_MSG)
 
-        start_date, end_date, shift = self._get_pre_weekends_dates()
-        self.send_message('{0} {1}'.format(self._bot_name,
-                                           start_date))
+        start_date, end_date, _ = self._get_pre_weekends_dates()
+        self.send_message('{0} {1}'.format(self._bot_name, start_date))
 
-        assert self.check_latest_response_with_retries(
-            'Отлично, по какое? (дд.мм)')
+        assert self.check_latest_response_with_retries(TO_MSG)
 
-        self.send_message('{0} {1}'.format(self._bot_name,
-                                           end_date))
+        self.send_message('{0} {1}'.format(self._bot_name, end_date))
 
         assert self.check_latest_response_with_retries(
-            'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
+            r'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
             match=True)
 
         self.send_message('{0} {1}'.format(self._bot_name, 'да'))
@@ -322,6 +352,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
                                                              self.username))
 
     def test_vacation_notification_in_channel(self):
+        """Tests if the bot informs the users in the #leave-coordination
+        channel when someone sends a leave request.
+        """
+
         self.switch_channel('leave-coordination')
         self._send_dividing_message()
         self.choose_general_channel()
@@ -336,6 +370,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._cancel_approved_request()
 
     def test_receiving_approval_in_channel(self):
+        """Tests if the bot informs the users in the #leave-coordination
+        channel when the admin approves a leave request.
+        """
+
         self._send_leave_request()
         self._input_start_date()
         self._input_end_date()
@@ -350,6 +388,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._cancel_approved_request()
 
     def test_receiving_reject_in_channel(self):
+        """Tests if the bot informs the users in the #leave-coordination
+        channel when the admin rejects a leave request.
+        """
+
         self._send_leave_request()
         self._input_start_date()
         self._input_end_date()
@@ -362,6 +404,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._check_reject_notification_in_channel()
 
     def test_cancel_notification_in_channel(self):
+        """Tests if the bot informs the users in the #leave-coordination
+        channel when the admin cancels the approved leave request.
+        """
+
         self.choose_general_channel()
         self._send_leave_request()
         self._input_start_date()
@@ -376,6 +422,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._check_cancel_notification_in_channel()
 
     def test_sending_request_and_approving_it_without_permission(self):
+        """Tests if it's not possible to approve a leave request without the
+        corresponding permissions.
+        """
+
         self.logout()
         self.login(use_test_user=True)
         self.choose_general_channel()
@@ -393,6 +443,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
         self._cancel_approved_request(username=self.test_username)
 
     def test_sending_request_and_rejecting_it_without_permission(self):
+        """Tests if it's not possible to reject a leave request without the
+        corresponding permissions.
+        """
+
         self.logout()
         self.login(use_test_user=True)
         self.choose_general_channel()
@@ -410,6 +464,8 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):
 
 
 def main():
+    """The main entry point. """
+
     parser = OptionParser(usage='usage: %prog [options] arguments')
     parser.add_option('-a', '--host', dest='host',
                       help='allows specifying admin username')
@@ -417,7 +473,7 @@ def main():
                       help='allows specifying admin username')
     parser.add_option('-p', '--password', dest='password',
                       help='allows specifying admin password')
-    options, args = parser.parse_args()
+    options, _ = parser.parse_args()
 
     if not options.host:
         parser.error('Host is not specified')
