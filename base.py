@@ -234,7 +234,7 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
 
         self.username = username
         self.password = password
-        self._rc_version = '0.70'
+        self._rc_version = '0.71'
 
         self.test_username = 'noname'
         self.test_full_name = 'No Name'
@@ -257,7 +257,9 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
             latest_msg = self.browser.driver.find_elements_by_css_selector(
                 'div.body.color-primary-font-color ')
 
-            assert latest_msg
+            if not latest_msg:
+                time.sleep(1)
+                continue
 
             latest_msg = latest_msg[-messages_number:]
             try:
