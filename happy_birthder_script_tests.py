@@ -22,6 +22,8 @@ import time
 from datetime import datetime, timedelta
 from optparse import OptionParser
 
+from selenium.webdriver.support.wait import WebDriverWait
+
 from base import RocketChatTestCase
 
 
@@ -67,64 +69,6 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     def _wait_reminder(self):
         time.sleep(self._reminder_interval_time)
-
-    def test_fwd_set_for_admin(self):
-        self.switch_channel(self._bot_name)
-        self.send_message('{} fwd set {} {}'.
-                          format(self._bot_name, self.username,
-                                 self._fwd_date))
-
-        assert self.check_latest_response_with_retries(
-            "Saving {}'s first working day.".format(self.username))
-
-    def test_fwd_reminder_for_admin(self):
-        self.choose_general_channel()
-
-        assert self.check_latest_response_with_retries(self._get_fwd_congratulation_pattern([self.username, ], [1, ]),
-                                                       match=True, attempts_number=80)
-
-    def test_fwd_set_for_new_user(self):
-        self.create_user()
-        close_btn = self.find_by_css('button[data-action="close"]')
-
-        assert len(close_btn)
-
-        close_btn.click()
-        self.switch_channel(self._bot_name)
-        self.send_message('{} fwd set {} {}'.
-                          format(self._bot_name, self.test_username,
-                                 self._fwd_date))
-
-        assert self.check_latest_response_with_retries(
-            "Saving {}'s first working day.".format(self.test_username))
-
-    def test_fwd_reminder_for_new_user(self):
-        self.choose_general_channel()
-
-        assert self.check_latest_response_with_retries(self._get_fwd_congratulation_pattern(
-            [self.username, self.test_username], [1, 1]), match=True,
-            attempts_number=self._reminder_interval_time)
-
-    def test_fwd_list(self):
-        self.switch_channel(self._bot_name)
-        self.send_message("{} fwd list".format(self._bot_name))
-
-        assert self.check_latest_response_with_retries(
-            '*First working days list*\n'
-            '@{} joined our team {}\n'
-            '@{} joined our team {}'.format(self.username,
-                                            self._fwd_date,
-                                            self.test_username,
-                                            self._fwd_date),
-            attempts_number=self._reminder_interval_time)
-        self.remove_user()
-
-        self.switch_channel(self._bot_name)
-        self.send_message("{} fwd list".format(self._bot_name))
-        assert self.check_latest_response_with_retries(
-            '*First working days list*\n'
-            '@{} joined our team {}'.format(self.username, self._fwd_date),
-            attempts_number=self._reminder_interval_time)
 
     #  base tests set
     def test_admins_birthday_set(self):
@@ -175,7 +119,6 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         close_btn.click()
         self.logout()
         self.login(use_test_user=True)
-        self._wait_reminder()
         self.switch_channel(self._bot_name)
         try:
             assert self.check_latest_response_with_retries(
@@ -467,8 +410,6 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.send_message('{} birthday delete {}'.
                           format(self._bot_name, self.test_username))
 
-        self.remove_user()
-
         options_btn = self.browser.driver.find_elements_by_css_selector(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
 
@@ -528,6 +469,71 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         assert len(confirm_btn)
 
         confirm_btn.first.click()
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_modal_window_visibility())
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert close_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+
+    # test set for fwd
+    def test_fwd_set_for_admin(self):
+        self.switch_channel(self._bot_name)
+        self.send_message('{} fwd set {} {}'.
+                          format(self._bot_name, self.username,
+                                 self._fwd_date))
+
+        assert self.check_latest_response_with_retries(
+            "Saving {}'s first working day.".format(self.username))
+
+    def test_fwd_reminder_for_admin(self):
+        self.choose_general_channel()
+
+        assert self.check_latest_response_with_retries(
+            self._get_fwd_congratulation_pattern([self.username, ], [1, ]),
+            match=True, attempts_number=80)
+
+    def test_fwd_set_for_new_user(self):
+        self.switch_channel(self._bot_name)
+        self.send_message('{} fwd set {} {}'.
+                          format(self._bot_name, self.test_username,
+                                 self._fwd_date))
+
+        assert self.check_latest_response_with_retries(
+            "Saving {}'s first working day.".format(self.test_username))
+
+    def test_fwd_reminder_for_new_user(self):
+        self.choose_general_channel()
+
+        assert self.check_latest_response_with_retries(self._get_fwd_congratulation_pattern(
+            [self.username, self.test_username], [1, 1]), match=True,
+            attempts_number=self._reminder_interval_time)
+
+    def test_fwd_list(self):
+        self.switch_channel(self._bot_name)
+        self.send_message("{} fwd list".format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(
+            '*First working days list*\n'
+            '@{} joined our team {}\n'
+            '@{} joined our team {}'.format(self.username,
+                                            self._fwd_date,
+                                            self.test_username,
+                                            self._fwd_date),
+            attempts_number=self._reminder_interval_time)
+        self.remove_user()
+
+        self.switch_channel(self._bot_name)
+        self.send_message("{} fwd list".format(self._bot_name))
+        assert self.check_latest_response_with_retries(
+            '*First working days list*\n'
+            '@{} joined our team {}'.format(self.username, self._fwd_date),
+            attempts_number=self._reminder_interval_time)
 
 
 def main():
