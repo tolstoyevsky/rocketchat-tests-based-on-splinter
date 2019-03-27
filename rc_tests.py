@@ -62,7 +62,7 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
                                     'application/vnd.openxmlformats-' \
                                     'officedocument.wordprocessingml.document'
 
-        self.wait_filling = 2
+        self.wait_filling = 7
 
         self.schedule_test_case('_delete_channels')
 
@@ -198,55 +198,9 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
         self.browser.back()
         self.choose_general_channel()
 
-    def _restore_media_types(self):
-        self.browser.reload()
-        options_btn = self.browser.find_by_css(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
-        )
-
-        assert options_btn
-
-        options_btn.last.click()
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-
-        assert administration_btn
-
-        administration_btn.click()
-
-        file_upload = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="File Upload"]')
-
-        assert file_upload
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           file_upload[0])
-
-        reset = self.find_by_css('.reset-setting.button.danger')
-
-        assert reset
-
-        reset[1].click()
-
-        time.sleep(self.wait_filling)
-
-        save_button = self.find_by_css('.rc-button.rc-button--primary.save')
-
-        assert save_button
-
-        save_button.first.click()
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert close_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
-
     #
     # Public methods
     #
-
     def test_starring_messages(self):
         """Tests if it's possible to star messages.
         See https://rocket.chat/docs/user-guides/messaging/#starring-messages.
@@ -1027,115 +981,6 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
         self.browser.driver.execute_script('arguments[0].click();',
                                            close_btn[0])
 
-    def test_changing_accepted_media_types(self):
-        """Tests the case when a accepted media types was correctly changed
-           Change the test when bug with media types input is fixed.
-        """
-        options_btn = self.browser.find_by_css(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
-        )
-
-        assert options_btn
-
-        options_btn.last.click()
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-
-        assert administration_btn
-
-        administration_btn.click()
-
-        file_upload = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="File Upload"]')
-
-        assert file_upload
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           file_upload[0])
-
-        media_types = self.find_by_css('.input-monitor.rc-input__element')
-
-        assert len(media_types) >= 2
-
-        test_type = 'audio/*'
-
-        media_types[1].fill(test_type)
-
-        time.sleep(self.wait_filling)
-        save_button = self.find_by_css('.rc-button.rc-button--primary.save')
-
-        assert save_button
-
-        save_button.first.click()
-
-        media_types = self.find_by_css('.input-monitor.rc-input__element')
-
-        assert media_types[1].value == test_type
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert close_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
-
-        options_btn = self.browser.find_by_css(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
-        )
-
-        assert options_btn
-
-        options_btn.last.click()
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-
-        assert administration_btn
-
-        administration_btn.click()
-
-        file_upload = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="File Upload"]')
-
-        assert file_upload
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           file_upload[0])
-
-        media_types = self.find_by_css('.input-monitor.rc-input__element')
-
-        assert len(media_types) >= 2
-
-        assert media_types[1].value == self._default_media_types
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert close_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
-
-    def test_trying_to_attach_unaccepted_file_type(self):
-        """Tests the case when a unaccepted media types was not correctly
-           attached.
-        """
-        self.choose_general_channel()
-        plus_msg_btn = self.find_by_css('svg.rc-icon.rc-input__icon-svg.'
-                                        'rc-input__icon-svg--plus')
-        assert plus_msg_btn
-
-        plus_msg_btn.last.click()
-        computer = self.browser.find_by_css('span.rc-popover__item-text')
-
-        assert computer
-
-        computer.last.click()
-        self.browser.find_by_id('fileupload-input').fill(self._file_url)
-
-        modal_window = self.find_by_css('.rc-modal-wrapper')
-
-        assert modal_window
-
-        self._restore_media_types()
-
     def test_pasting_string_from_clipboard(self):
         """Tests if it's possible to paste a string from the clipboard and send
         it to the #general channel.
@@ -1220,6 +1065,82 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
             description)
 
         self.check_latest_response_with_retries(expected_message, match=True)
+
+    def test_changing_accepted_media_types(self):
+        """Tests the case when a accepted media types
+           was correctly changed.
+        """
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_hiding_toast_message())
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert options_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        file_upload = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="File Upload"]')
+
+        assert file_upload
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           file_upload[0])
+
+        media_types = self.find_by_css('.input-monitor.rc-input__element')
+
+        assert len(media_types) >= 2
+
+        test_type = 'audio/*'
+
+        media_types[1].fill(test_type)
+
+        time.sleep(self.wait_filling)
+        save_button = self.find_by_css('.rc-button.rc-button--primary.save')
+
+        assert save_button
+
+        save_button.first.click()
+
+        media_types = self.find_by_css('.input-monitor.rc-input__element')
+
+        assert media_types[1].value == test_type
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert close_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+
+    def test_trying_to_attach_unaccepted_file_type(self):
+        """Tests the case when a unaccepted media types was not correctly
+           attached.
+        """
+        self.choose_general_channel()
+        plus_msg_btn = self.find_by_css('svg.rc-icon.rc-input__icon-svg.'
+                                        'rc-input__icon-svg--plus')
+        assert plus_msg_btn
+
+        plus_msg_btn.last.click()
+        computer = self.browser.find_by_css('span.rc-popover__item-text')
+
+        assert computer
+
+        computer.last.click()
+        self.browser.find_by_id('fileupload-input').fill(self._file_url)
+
+        modal_window = self.find_by_css('.rc-modal-wrapper')
+
+        assert modal_window
+        # wait modal window closing
+        time.sleep(5)
 
 
 def main():
