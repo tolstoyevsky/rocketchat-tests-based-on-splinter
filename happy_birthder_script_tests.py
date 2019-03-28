@@ -15,19 +15,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests related to the hubot-happy-birthder script. """
+
+# pylint: disable=fixme
+
 import re
 import sys
 import time
 
 from datetime import datetime, timedelta
-from optparse import OptionParser
-
+from optparse import OptionParser  # pylint: disable=deprecated-module
 from selenium.webdriver.support.wait import WebDriverWait
 
 from base import RocketChatTestCase
 
 
 class HappyBirthderScriptTestCase(RocketChatTestCase):
+    """Tests for the hubot-happy-birthder script. """
+
     def __init__(self, addr, username, password, reminder_interval_time, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
 
@@ -45,21 +50,29 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
         self._fwd_date = datetime.now().replace(year=datetime.now().year - 1).strftime('%d.%m.%Y')
 
-    def _get_date_with_shift(self, shift):
+    #
+    # Private methods
+    #
+
+    @staticmethod
+    def _get_date_with_shift(shift):
         return (datetime.now() + timedelta(days=shift)).strftime('%d.%m.%Y')
 
-    def _get_channel_pattern(self, name, date):
+    @staticmethod
+    def _get_channel_pattern(name, date):
         d_m = date[:-5]
         return f'{name}-birthday-channel-{d_m}-id[0-9]{{3}}'
 
-    def _get_congratulation_pattern(self, username):
+    @staticmethod
+    def _get_congratulation_pattern(username):
         pattern = (f'https?://media.tenor.com/images/[0-9a-z]*/tenor.gif\n'
                    f'Today is birthday of @{username}!\n'
                    f'[w+]*')
 
         return pattern
 
-    def _get_fwd_congratulation_pattern(self, usernames, years_counts):
+    @staticmethod
+    def _get_fwd_congratulation_pattern(usernames, years_counts):
         pattern = f'.*'
         for name, count in zip(usernames, years_counts):  # pylint: disable=unused-variable
             pattern += (f'\n@{name} has been a part of our team for {count} '
@@ -70,8 +83,13 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
     def _wait_reminder(self):
         time.sleep(self._reminder_interval_time)
 
-    #  base tests set
+    #
+    # Public methods
+    #
+
     def test_admins_birthday_set(self):
+        """Tests if it's possible on behalf of the admin to set a birth date. """
+
         self.choose_general_channel()
         # TODO: test with invalid dates
         self.send_message('{} birthday set {} {}'.
@@ -82,6 +100,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             "Saving {}'s birthday.".format(self.username))
 
     def test_admins_birthdays_on(self):
+        """Tests if it's possible on behalf of the admin to get the list of
+        users with the specified birth date.
+        """
+
         day_month = self._test_birthday[:-5]
 
         # TODO: test with invalid dates
@@ -92,14 +114,21 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             '@{}'.format(self.username))
 
     def test_invoking_birthday_delete_by_admin(self):
+        """Tests if it's possible on behalf of the admin to delete the
+        specified birth date.
+        """
+
         self.send_message('{} birthday delete {}'.
                           format(self._bot_name, self.username))
 
         assert self.check_latest_response_with_retries(
             "Removing {}'s birthday.".format(self.username))
 
-    #  tests set for requesting birthdays set
     def test_specifying_date_birth_by_admin(self):
+        """Tests if it's possible on behalf of the admin to specify their own
+        birth date.
+        """
+
         self.switch_channel(self._bot_name)
         assert self.check_latest_response_with_retries(
             'Hmm...\n'
@@ -112,10 +141,14 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         )
 
     def test_specifying_date_birth_by_new_user(self):
+        """Tests if it's possible on behalf of an ordinary user to specify
+        their own birth date.
+        """
+
         self.create_user()
         close_btn = self.find_by_css('button[data-action="close"]')
-        assert len(close_btn)
-        
+        assert close_btn
+
         close_btn.click()
         self.logout()
         self.login(use_test_user=True)
@@ -139,8 +172,9 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.logout()
         self.login()
 
-    #  tests set for birthday channels and notifications
     def test_creating_birthday_channel(self):
+        """Tests if a birthday channel is automatically created. """
+
         self.choose_general_channel()
         test_date = self._get_date_with_shift(7)
         self.send_message('{} birthday set {} {}'.
@@ -153,11 +187,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self._wait_reminder()
         private_channels = self.find_by_css('.rooms-list__list.type-p')
 
-        assert len(private_channels)
+        assert private_channels
 
         lst_of_channels = private_channels.text.split('\n')
 
-        assert len(lst_of_channels)
+        assert lst_of_channels
 
         pattern = self._get_channel_pattern(self.test_username,
                                             self._get_date_with_shift(0))
@@ -171,6 +205,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         )
 
     def test_checking_absence_of_test_user_in_channel(self):
+        """Tests if the user, who is having a birthday soon, is not in the birthday channel. """
+
         channel_options = self.find_by_css(
             '.rc-room-actions__action.tab-button.js-action')
 
@@ -180,12 +216,14 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
         members_list = self.find_by_css('.rc-member-list__user')
 
-        assert len(members_list)
+        assert members_list
 
         assert all([member.text != self.test_username
                     for member in members_list])
 
     def test_reminder_of_upcoming_birthday_7_days_in_advance(self):
+        """Tests the bot reminds about the upcoming birthday 7 days in advance. """
+
         self.switch_channel(self._bot_name)
         assert self.check_latest_response_with_retries(
             '@{} is having a birthday on {}.'
@@ -193,6 +231,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         )
 
     def test_reminder_of_upcoming_birthday_1_days_in_advance(self):
+        """Makes sure the bot reminds about the upcoming birthday 1 days in advance. """
+
         self.choose_general_channel()
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.test_username,
@@ -204,6 +244,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         )
 
     def test_deleting_birthday_channel(self):
+        """Tests if a birthday channel is automatically deleted. """
         self.choose_general_channel()
         test_date = self._get_date_with_shift(-3)
         self.send_message('{} birthday set {} {}'.format(self._bot_name,
@@ -213,20 +254,22 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self._wait_reminder()
         private_channels = self.find_by_css('.rooms-list__list.type-p')
 
-        assert len(private_channels)
+        assert private_channels
 
         lst_of_channels = private_channels.text.split('\n')
 
-        assert len(lst_of_channels)
+        assert lst_of_channels
 
         pattern = self._get_channel_pattern(self.test_username, test_date)
 
         assert all([not bool(re.match(pattern, channel))
                     for channel in lst_of_channels])
 
-    #  tests set for birthdays congratulation
-
     def test_birthday_message(self):
+        """Makes sure the bot writes a birthday message to #general devoted to
+        the user who is having a birthday.
+        """
+
         self.choose_general_channel()
         self.send_message('{} birthday set {} {}'.
                           format(self._bot_name, self.username,
@@ -235,9 +278,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries(pattern, match=True,
                                                        attempts_number=self._reminder_interval_time)
 
-    #  tests for birthdays list
-
     def test_birthdays_list_command_with_no_birthday(self):
+        """Tests the case when someone is invoking 'birthdays list' but there is
+        no any birth date stored.
+        """
+
         self.send_message('{} birthday delete {}'.format(self._bot_name,
                                                          self.username))
         self.send_message('{} birthday delete {}'.format(self._bot_name,
@@ -247,6 +292,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
 
     def test_invoking_birthdays_list_with_1_birth_date(self):
+        """Tests the case when someone is invoking 'birthdays list' but there is
+        the only birth date stored.
+        """
+
         self.send_message('{} birthday set {} {}'.format(self._bot_name,
                                                          self.username,
                                                          self._test_birthday))
@@ -256,8 +305,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             '*Birthdays list*\n@{} was born on {}'.format(self.username,
                                                           self._test_birthday))
 
-    # Test check the order in the list
     def test_invoking_birthdays_list_with_2_birth_dates(self):
+        """Tests the case when someone is invoking 'birthdays list' but there
+        are only 2 birth dates stored.
+        """
+
         self.choose_general_channel()
         admins_birthday = self._get_date_with_shift(25)
         self.send_message('{} birthday set {} {}'.format(self._bot_name,
@@ -275,8 +327,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             '@{} was born on {}'.format(self.test_username, users_birthday,
                                         self.username, admins_birthday))
 
-    #  test set for blacklist
-    def test_birthday_channel_blacklist(self):
+    def test_birthday_channel_blacklist(self):  # pylint: disable=too-many-locals,too-many-statements
+        """Makes sure that the user, who is in the blacklist, is not invited
+        in birthday channels.
+        """
+
         #  create user for blacklist
         options_btn = self.browser.find_by_css(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button'
@@ -289,81 +344,81 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         users_btn = self.browser.driver.find_elements_by_css_selector(
             'a.sidebar-item__link[aria-label="Users"]')
 
-        assert len(users_btn)
+        assert users_btn
 
         self.browser.driver.execute_script('arguments[0].click();',
                                            users_btn[0])
 
         add_user_btn = self.find_by_css('button[aria-label="Add User"]')
 
-        assert len(add_user_btn)
+        assert add_user_btn
 
         add_user_btn.click()
 
         input_name_el = self.find_by_css('input#name')
 
-        assert len(input_name_el)
+        assert input_name_el
 
         input_name_el.first.fill(self._test_user_for_blacklist)
 
         input_username_el = self.find_by_css('input#username')
 
-        assert len(input_username_el)
+        assert input_username_el
 
         input_username_el.first.fill(self._test_user_for_blacklist)
 
         input_email_el = self.find_by_css('input#email')
 
-        assert len(input_email_el)
+        assert input_email_el
 
         input_email_el.first.fill(
             '{}@nodomain.com'.format(self._test_user_for_blacklist))
 
         verified_btn = self.find_by_css('label.rc-switch__label')
 
-        assert len(verified_btn)
+        assert verified_btn
 
         verified_btn.first.click()
 
         input_password_el = self.find_by_css('input#password')
 
-        assert len(input_password_el)
+        assert input_password_el
 
         input_password_el.first.fill('pass')
 
         verified_btn = self.find_by_css('label.rc-switch__label')
 
-        assert len(verified_btn)
+        assert verified_btn
 
         verified_btn.last.click()
 
         role_option = self.find_by_css('option[value="user"]')
 
-        assert len(role_option)
+        assert role_option
 
         role_option.first.click()
 
         add_role_btn = self.find_by_css('button#addRole')
 
-        assert len(add_role_btn)
+        assert add_role_btn
 
         add_role_btn.first.click()
 
         welcome_ckbx = self.find_by_css('label[for="sendWelcomeEmail"]')
 
-        assert len(welcome_ckbx)
+        assert welcome_ckbx
 
         welcome_ckbx.first.click()
 
         save_btn = self.find_by_css('.rc-button.rc-button--primary.save')
 
-        assert len(save_btn)
+        assert save_btn
 
         save_btn.first.click()
 
         close_btn = self.find_by_css('button[data-action="close"]')
 
-        assert len(close_btn)
+        assert close_btn
 
         close_btn.click()
 
@@ -376,11 +431,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self._wait_reminder()
         private_channels = self.find_by_css('.rooms-list__list.type-p')
 
-        assert len(private_channels)
+        assert private_channels
 
         lst_of_channels = private_channels.text.split('\n')
 
-        assert len(lst_of_channels)
+        assert lst_of_channels
 
         self.switch_channel(lst_of_channels[-1])
 
@@ -412,7 +467,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         options_btn = self.browser.driver.find_elements_by_css_selector(
             '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
 
-        assert len(options_btn)
+        assert options_btn
 
         self.browser.driver.execute_script('arguments[0].click();',
                                            options_btn[-1])
@@ -423,7 +478,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         users_btn = self.browser.driver.find_elements_by_css_selector(
             'a.sidebar-item__link[aria-label="Users"]')
 
-        assert len(users_btn)
+        assert users_btn
 
         self.browser.driver.execute_script('arguments[0].click();',
                                            users_btn[0])
@@ -432,7 +487,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             '//td[@class="border-component-color"][text()="{0}"]'
             .format(self._test_user_for_blacklist))
 
-        assert len(selected_user)
+        assert selected_user
 
         selected_user.first.click()
 
@@ -442,7 +497,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                 '[text()="Delete"]'
             )
 
-            assert len(delete_btn)
+            assert delete_btn
 
         except AssertionError:
             more_btn = self.find_by_css(
@@ -450,7 +505,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                 '[aria-label="More"]'
             )
 
-            assert len(more_btn)
+            assert more_btn
 
             more_btn.first.click()
 
@@ -459,13 +514,13 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                 '/span[text()="Delete"]'
             )
 
-            assert len(delete_btn)
+            assert delete_btn
 
         delete_btn.first.click()
 
         confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
 
-        assert len(confirm_btn)
+        assert confirm_btn
 
         confirm_btn.first.click()
 
@@ -480,8 +535,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.browser.driver.execute_script('arguments[0].click();',
                                            close_btn[0])
 
-    # test set for fwd
     def test_fwd_set_for_admin(self):
+        """Tests if it's possible on behalf of the admin to specify a first
+        working date for a user.
+        """
+
         self.switch_channel(self._bot_name)
         self.send_message('{} fwd set {} {}'.
                           format(self._bot_name, self.username,
@@ -491,6 +549,11 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             "Saving {}'s first working day.".format(self.username))
 
     def test_fwd_reminder_for_admin(self):
+        """Makes sure the bot writes a message to #general containing a
+        congratulation on the work anniversary (the case when there is
+        the only user celebrating the work anniversary).
+        """
+
         self.choose_general_channel()
 
         assert self.check_latest_response_with_retries(
@@ -498,6 +561,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             match=True, attempts_number=80)
 
     def test_fwd_set_for_new_user(self):
+        """Useless test case because it repeats test_fwd_set_for_admin.
+        TODO: merge it with the next one (i.e. test_fwd_reminder_for_new_user).
+        """
+
         self.switch_channel(self._bot_name)
         self.send_message('{} fwd set {} {}'.
                           format(self._bot_name, self.test_username,
@@ -507,13 +574,23 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             "Saving {}'s first working day.".format(self.test_username))
 
     def test_fwd_reminder_for_new_user(self):
+        """Makes sure the bot writes a message to #general containing a
+        congratulation on the work anniversary (the case when there are
+        two users celebrating the work anniversary).
+        """
         self.choose_general_channel()
 
-        assert self.check_latest_response_with_retries(self._get_fwd_congratulation_pattern(
-            [self.username, self.test_username], [1, 1]), match=True,
+        users = [self.username, self.test_username]
+        assert self.check_latest_response_with_retries(
+            self._get_fwd_congratulation_pattern(users, [1, 1]),
+            match=True,
             attempts_number=self._reminder_interval_time)
 
     def test_fwd_list(self):
+        """Tests the case when someone is invoking 'fwd list' but there are
+        only 2 dates stored.
+        """
+
         self.switch_channel(self._bot_name)
         self.send_message('{} fwd list'.format(self._bot_name))
 
@@ -535,6 +612,8 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
 
 def main():
+    """The main entry point. """
+
     parser = OptionParser(usage='usage: %prog [options] arguments')
     parser.add_option('-a', '--host', dest='host',
                       help='allows specifying domain or IP of the Rocket.Chat host')
