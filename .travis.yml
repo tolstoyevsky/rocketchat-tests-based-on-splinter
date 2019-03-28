@@ -9,6 +9,7 @@ install:
 
 script:
   - pylint base.py
+  - pylint happy_birthder_script_tests.py
   - pylint rc_tests.py
   - pylint viva_las_vegas_script_tests.py
   - pylint vote_or_die_script_tests.py
