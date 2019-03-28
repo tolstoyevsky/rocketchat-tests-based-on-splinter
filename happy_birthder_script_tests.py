@@ -53,17 +53,17 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         return f'{name}-birthday-channel-{d_m}-id[0-9]{{3}}'
 
     def _get_congratulation_pattern(self, username):
-        pattern = f'https?://media.tenor.com/images/[0-9a-z]*/tenor.gif\n' \
-                  f'Today is birthday of @{username}!\n' \
-                  f'[w+]*'
+        pattern = (f'https?://media.tenor.com/images/[0-9a-z]*/tenor.gif\n'
+                   f'Today is birthday of @{username}!\n'
+                   f'[w+]*')
 
         return pattern
 
     def _get_fwd_congratulation_pattern(self, usernames, years_counts):
         pattern = f'.*'
-        for name, count in zip(usernames, years_counts):
-            pattern += \
-                f'\n@{name} has been a part of our team for {count} {"year" if count==1 else "years"} and'
+        for name, count in zip(usernames, years_counts):  # pylint: disable=unused-variable
+            pattern += (f'\n@{name} has been a part of our team for {count} '
+                        f'{"year" if count==1 else "years"} and')
 
         return pattern[:-4] + "!"
 
@@ -151,7 +151,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         )
 
         self._wait_reminder()
-        private_channels = self.find_by_css(".rooms-list__list.type-p")
+        private_channels = self.find_by_css('.rooms-list__list.type-p')
 
         assert len(private_channels)
 
@@ -172,7 +172,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     def test_checking_absence_of_test_user_in_channel(self):
         channel_options = self.find_by_css(
-            ".rc-room-actions__action.tab-button.js-action")
+            '.rc-room-actions__action.tab-button.js-action')
 
         assert len(channel_options) >= 3
 
@@ -206,12 +206,12 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
     def test_deleting_birthday_channel(self):
         self.choose_general_channel()
         test_date = self._get_date_with_shift(-3)
-        self.send_message('{} birthday set {} {}'.
-                          format(self._bot_name, self.test_username,
-                                 test_date))
+        self.send_message('{} birthday set {} {}'.format(self._bot_name,
+                                                         self.test_username,
+                                                         test_date))
 
         self._wait_reminder()
-        private_channels = self.find_by_css(".rooms-list__list.type-p")
+        private_channels = self.find_by_css('.rooms-list__list.type-p')
 
         assert len(private_channels)
 
@@ -238,18 +238,18 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
     #  tests for birthdays list
 
     def test_birthdays_list_command_with_no_birthday(self):
-        self.send_message('{} birthday delete {}'.
-                          format(self._bot_name, self.username))
-        self.send_message('{} birthday delete {}'.
-                          format(self._bot_name, self.test_username))
+        self.send_message('{} birthday delete {}'.format(self._bot_name,
+                                                         self.username))
+        self.send_message('{} birthday delete {}'.format(self._bot_name,
+                                                         self.test_username))
         self.send_message('{} birthdays list'.format(self._bot_name))
         assert self.check_latest_response_with_retries('Oops... No results.')
 
 
     def test_invoking_birthdays_list_with_1_birth_date(self):
-        self.send_message('{} birthday set {} {}'.
-                          format(self._bot_name, self.username,
-                                 self._test_birthday))
+        self.send_message('{} birthday set {} {}'.format(self._bot_name,
+                                                         self.username,
+                                                         self._test_birthday))
         self.send_message('{} birthdays list'.format(self._bot_name))
 
         assert self.check_latest_response_with_retries(
@@ -260,21 +260,20 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
     def test_invoking_birthdays_list_with_2_birth_dates(self):
         self.choose_general_channel()
         admins_birthday = self._get_date_with_shift(25)
-        self.send_message('{} birthday set {} {}'.
-                          format(self._bot_name, self.username,
-                                 admins_birthday))
+        self.send_message('{} birthday set {} {}'.format(self._bot_name,
+                                                         self.username,
+                                                         admins_birthday))
         users_birthday = self._get_date_with_shift(20)
-        self.send_message('{} birthday set {} {}'.
-                          format(self._bot_name, self.test_username,
-                                 users_birthday))
+        self.send_message('{} birthday set {} {}'.format(self._bot_name,
+                                                         self.test_username,
+                                                         users_birthday))
         # test user should be first in birthdays list
         self.send_message('{} birthdays list'.format(self._bot_name))
         assert self.check_latest_response_with_retries(
             '*Birthdays list*\n'
             '@{} was born on {}\n'
-            '@{} was born on {}'
-            .format(self.test_username, users_birthday,
-                    self.username, admins_birthday))
+            '@{} was born on {}'.format(self.test_username, users_birthday,
+                                        self.username, admins_birthday))
 
     #  test set for blacklist
     def test_birthday_channel_blacklist(self):
@@ -292,7 +291,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
         assert len(users_btn)
 
-        self.browser.driver.execute_script("arguments[0].click();",
+        self.browser.driver.execute_script('arguments[0].click();',
                                            users_btn[0])
 
         add_user_btn = self.find_by_css('button[aria-label="Add User"]')
@@ -375,7 +374,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                                  test_date))
 
         self._wait_reminder()
-        private_channels = self.find_by_css(".rooms-list__list.type-p")
+        private_channels = self.find_by_css('.rooms-list__list.type-p')
 
         assert len(private_channels)
 
@@ -386,7 +385,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self.switch_channel(lst_of_channels[-1])
 
         channel_options = self.find_by_css(
-            ".rc-room-actions__action.tab-button.js-action")
+            '.rc-room-actions__action.tab-button.js-action')
 
         assert len(channel_options) >= 3
 
@@ -426,7 +425,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
         assert len(users_btn)
 
-        self.browser.driver.execute_script("arguments[0].click();",
+        self.browser.driver.execute_script('arguments[0].click();',
                                            users_btn[0])
 
         selected_user = self.browser.find_by_xpath(
@@ -516,20 +515,19 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
 
     def test_fwd_list(self):
         self.switch_channel(self._bot_name)
-        self.send_message("{} fwd list".format(self._bot_name))
+        self.send_message('{} fwd list'.format(self._bot_name))
 
         assert self.check_latest_response_with_retries(
             '*First working days list*\n'
             '@{} joined our team {}\n'
-            '@{} joined our team {}'.format(self.username,
-                                            self._fwd_date,
+            '@{} joined our team {}'.format(self.username, self._fwd_date,
                                             self.test_username,
                                             self._fwd_date),
             attempts_number=self._reminder_interval_time)
         self.remove_user()
 
         self.switch_channel(self._bot_name)
-        self.send_message("{} fwd list".format(self._bot_name))
+        self.send_message('{} fwd list'.format(self._bot_name))
         assert self.check_latest_response_with_retries(
             '*First working days list*\n'
             '@{} joined our team {}'.format(self.username, self._fwd_date),
