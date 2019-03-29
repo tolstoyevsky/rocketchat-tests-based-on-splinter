@@ -30,7 +30,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from base import RocketChatTestCase
 
 
-class HappyBirthderScriptTestCase(RocketChatTestCase):
+class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-many-public-methods
     """Tests for the hubot-happy-birthder script. """
 
     def __init__(self, addr, username, password, reminder_interval_time, **kwargs):
@@ -169,6 +169,29 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         assert self.check_latest_response_with_retries(
             'I memorized you birthday, well done! 😉'
         )
+
+    def test_invoking_birthday_set_by_ordinary_user(self):
+        """Test if it's not possible on behalf of an ordinary user to specify
+        someone's birth date.
+        """
+
+        self.choose_general_channel()
+        self.send_message('{} birthday set {} {}'.format(self._bot_name,
+                                                         self.username,
+                                                         self._test_birthday))
+
+        assert self.check_latest_response_with_retries('Permission denied.')
+
+    def test_invoking_birthday_delete_by_ordinary_user(self):
+        """Test if it's not possible on behalf of an ordinary user to delete
+        someone's birth date.
+        """
+
+        self.send_message('{} birthday delete {} {}'.format(
+            self._bot_name, self.username, self._test_birthday))
+
+        assert self.check_latest_response_with_retries('Permission denied.')
+
         self.logout()
         self.login()
 
