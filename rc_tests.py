@@ -54,14 +54,14 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
 
         self._non_unique_channel_name = 'test_channel'
 
-        self._default_media_types = 'image/*,audio/*,video/*,' \
-                                    'application/zip,' \
-                                    'application/x-rar-compressed,' \
-                                    'application/pdf,text/plain,' \
-                                    'application/msword,' \
-                                    'application/vnd.openxmlformats-' \
-                                    'officedocument.wordprocessingml.document'
-
+        self._default_media_types = ('image/*,audio/*,video/*,'
+                                     'application/zip,'
+                                     'application/x-rar-compressed,'
+                                     'application/pdf,text/plain,'
+                                     'application/msword,'
+                                     'application/vnd.openxmlformats-'
+                                     'officedocument.wordprocessingml.document'
+                                     )
         self.wait_filling = 7
 
         self.schedule_test_case('_delete_channels')
@@ -201,6 +201,7 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
     #
     # Public methods
     #
+
     def test_starring_messages(self):
         """Tests if it's possible to star messages.
         See https://rocket.chat/docs/user-guides/messaging/#starring-messages.
@@ -1067,9 +1068,7 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
         self.check_latest_response_with_retries(expected_message, match=True)
 
     def test_changing_accepted_media_types(self):
-        """Tests the case when a accepted media types
-           was correctly changed.
-        """
+        """Tests the case when a accepted media types was correctly changed."""
 
         WebDriverWait(self.browser.driver, 10).until(
             lambda _: self._check_hiding_toast_message())
@@ -1120,9 +1119,7 @@ class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-
                                            close_btn[0])
 
     def test_trying_to_attach_unaccepted_file_type(self):
-        """Tests the case when a unaccepted media types was not correctly
-           attached.
-        """
+        """Tests the case when a unaccepted media types was not correctly attached."""
         self.choose_general_channel()
         plus_msg_btn = self.find_by_css('svg.rc-icon.rc-input__icon-svg.'
                                         'rc-input__icon-svg--plus')
