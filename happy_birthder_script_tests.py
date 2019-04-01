@@ -583,9 +583,10 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
             self._get_fwd_congratulation_pattern([self.username, ], [1, ]),
             match=True, attempts_number=80)
 
-    def test_fwd_set_for_new_user(self):
-        """Useless test case because it repeats test_fwd_set_for_admin.
-        TODO: merge it with the next one (i.e. test_fwd_reminder_for_new_user).
+    def test_fwd_reminder_for_new_user(self):
+        """Makes sure the bot writes a message to #general containing a
+        congratulation on the work anniversary (the case when there are
+        two users celebrating the work anniversary).
         """
 
         self.switch_channel(self._bot_name)
@@ -596,11 +597,6 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
         assert self.check_latest_response_with_retries(
             "Saving {}'s first working day.".format(self.test_username))
 
-    def test_fwd_reminder_for_new_user(self):
-        """Makes sure the bot writes a message to #general containing a
-        congratulation on the work anniversary (the case when there are
-        two users celebrating the work anniversary).
-        """
         self.choose_general_channel()
 
         users = [self.username, self.test_username]
