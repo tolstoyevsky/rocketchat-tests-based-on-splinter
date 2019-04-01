@@ -30,7 +30,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from base import RocketChatTestCase
 
 
-class HappyBirthderScriptTestCase(RocketChatTestCase):
+class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-many-public-methods
     """Tests for the hubot-happy-birthder script. """
 
     def __init__(self, addr, username, password, reminder_interval_time, **kwargs):
@@ -49,6 +49,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
         self._test_user_for_blacklist = 'test_user_for_blacklist'
 
         self._fwd_date = datetime.now().replace(year=datetime.now().year - 1).strftime('%d.%m.%Y')
+        self._today = datetime.now().strftime('%d.%m.%Y')
 
     #
     # Private methods
@@ -586,13 +587,18 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
             match=True,
             attempts_number=self._reminder_interval_time)
 
-    def test_fwd_list(self):
+    def test_fwd_list_with_2_dates(self):
         """Tests the case when someone is invoking 'fwd list' but there are
         only 2 dates stored.
         """
 
         self.switch_channel(self._bot_name)
         self.send_message('{} fwd list'.format(self._bot_name))
+
+        response = self.rocket.users_info(username=self._test_user_for_blacklist).json()
+        if response['success']:
+            test_blacklist_user_id = response['user']['_id']
+            self.rocket.users_delete(test_blacklist_user_id)
 
         assert self.check_latest_response_with_retries(
             '*First working days list*\n'
@@ -601,6 +607,12 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):
                                             self.test_username,
                                             self._fwd_date),
             attempts_number=self._reminder_interval_time)
+
+    def test_fwd_list_with_1_date(self):
+        """Tests the case when someone is invoking 'fwd list' but there are
+        only 1 dates stored.
+        """
+
         self.remove_user()
 
         self.switch_channel(self._bot_name)
