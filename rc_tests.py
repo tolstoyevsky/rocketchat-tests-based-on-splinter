@@ -22,6 +22,7 @@
 import datetime
 import os
 import sys
+import time
 import uuid
 from argparse import ArgumentParser
 
@@ -32,7 +33,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from base import RocketChatTestCase
 
 
-class GeneralTestCase(RocketChatTestCase):
+class GeneralTestCase(RocketChatTestCase):  # pylint: disable=too-many-instance-attributes
     """General tests for Rocket.Chat. """
 
     def __init__(self, addr, username, password, **kwargs):
@@ -52,6 +53,16 @@ class GeneralTestCase(RocketChatTestCase):
             'read_only_test_channel', uuid.uuid4())
 
         self._non_unique_channel_name = 'test_channel'
+
+        self._default_media_types = ('image/*,audio/*,video/*,'
+                                     'application/zip,'
+                                     'application/x-rar-compressed,'
+                                     'application/pdf,text/plain,'
+                                     'application/msword,'
+                                     'application/vnd.openxmlformats-'
+                                     'officedocument.wordprocessingml.document'
+                                     )
+        self.wait_filling = 7
 
         self.schedule_test_case('_delete_channels')
 
@@ -1055,6 +1066,78 @@ class GeneralTestCase(RocketChatTestCase):
             description)
 
         self.check_latest_response_with_retries(expected_message, match=True)
+
+    def test_changing_accepted_media_types(self):
+        """Tests the case when a accepted media types was correctly changed."""
+
+        WebDriverWait(self.browser.driver, 10).until(
+            lambda _: self._check_hiding_toast_message())
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert options_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        file_upload = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="File Upload"]')
+
+        assert file_upload
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           file_upload[0])
+
+        media_types = self.find_by_css('.input-monitor.rc-input__element')
+
+        assert len(media_types) >= 2
+
+        test_type = 'audio/*'
+
+        media_types[1].fill(test_type)
+
+        time.sleep(self.wait_filling)
+        save_button = self.find_by_css('.rc-button.rc-button--primary.save')
+
+        assert save_button
+
+        save_button.first.click()
+
+        media_types = self.find_by_css('.input-monitor.rc-input__element')
+
+        assert media_types[1].value == test_type
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert close_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+
+    def test_trying_to_attach_unaccepted_file_type(self):
+        """Tests the case when a unaccepted media types was not correctly attached."""
+        self.choose_general_channel()
+        plus_msg_btn = self.find_by_css('svg.rc-icon.rc-input__icon-svg.'
+                                        'rc-input__icon-svg--plus')
+        assert plus_msg_btn
+
+        plus_msg_btn.last.click()
+        computer = self.browser.find_by_css('span.rc-popover__item-text')
+
+        assert computer
+
+        computer.last.click()
+        self.browser.find_by_id('fileupload-input').fill(self._file_url)
+
+        modal_window = self.find_by_css('.rc-modal-wrapper')
+
+        assert modal_window
+        # wait modal window closing
+        time.sleep(5)
 
 
 def main():
