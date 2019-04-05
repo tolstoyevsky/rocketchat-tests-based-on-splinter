@@ -32,7 +32,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from base import RocketChatTestCase
 
 
-class GeneralTestCase(RocketChatTestCase):
+class GeneralRocketChatTestCase(RocketChatTestCase):
     """General tests for Rocket.Chat. """
 
     def __init__(self, addr, username, password, **kwargs):
@@ -1080,8 +1080,8 @@ def main():
     if not options.password:
         parser.error('Password is not specified')
 
-    test_cases = GeneralTestCase(options.host, options.username,
-                                 options.password, create_test_user=True)
+    test_cases = GeneralRocketChatTestCase(options.host, options.username,
+                                           options.password, create_test_user=True)
     exit_code = test_cases.run()
     sys.exit(exit_code)
 

@@ -186,6 +186,10 @@ class SplinterTestCase(metaclass=OrderedClassMembers):  # pylint: disable=too-ma
 
         exit_code = 0
 
+        name = re.findall('[A-Z][^A-Z]*', self.__class__.__name__)
+        verbose_script_name = ' '.join(name).lower()
+        print('Starting {}'.format(verbose_script_name))
+
         try:
             exit_code = self._run()
 

@@ -23,7 +23,7 @@ from base import SplinterTestCase
 LOCALHOST = 'http://127.0.0.1:8006'
 
 
-class IsBotOnline(SplinterTestCase):
+class WaitUntilBotIsOnline(SplinterTestCase):
     def __init__(self, addr, username, password, **kwargs):
         SplinterTestCase.__init__(self, addr)
 
@@ -104,7 +104,7 @@ def main():
             'Bot name is not specified. Defaults to {}.\n'.format(options.bot)
         )
 
-    checks = IsBotOnline(
+    checks = WaitUntilBotIsOnline(
         options.host,
         options.username,
         options.password,
