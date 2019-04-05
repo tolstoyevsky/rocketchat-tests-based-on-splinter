@@ -462,6 +462,86 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.switch_channel('leave-coordination')
         self._reject_request(username=self.test_username)
 
+    def test_sending_time_off_request_from_regular_user(self):
+        """Tests if it's possible to send a time off request from a regular user. """
+
+        self.logout()
+        self.login(use_test_user=True)
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} {} хочет отгул'.format(self._bot_name, self.test_username)
+        )
+        assert self.check_latest_response_with_retries(
+            'У тебя недостаточно прав для этой команды 🙄'
+        )
+
+        self.logout()
+        self.login()
+
+    def test_sending_time_off_request_from_admin(self):
+        """Tests if it's possible to send a time off request from the admin. """
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} {} хочет отгул'.format(self._bot_name, self.test_username)
+        )
+        assert self.check_latest_response_with_retries(
+            'Когда @{} хочет взять отгул?'.format(self.test_username)
+        )
+
+        self.send_message(
+            '{} {} хочет отгул'.format(self._bot_name, self.test_username)
+        )
+        assert self.check_latest_response_with_retries(
+            'Дaвай по порядку. Какого числа @{} хочет взять отгул?'
+            .format(self.test_username)
+        )
+
+        self.send_message(
+            '{} {} хочет отгул'.format(self._bot_name, self.username)
+        )
+        assert self.check_latest_response_with_retries(
+            'Дaвай по порядку. Какого числа @{} хочет взять отгул?'
+            .format(self.test_username)
+        )
+
+        today = datetime.now().strftime('%d.%m')
+        today_full = datetime.now().strftime('%d.%m.%Y')
+        tomorrow = (datetime.now() + timedelta(days=1)).strftime('%d.%m')
+
+        self.send_message('{} {}'.format(self._bot_name, today))
+        assert self.check_latest_response_with_retries(
+            'Отлично. Значит @{} берет отгул {}. Какой это будет отгул?\n'
+            'Отгул с отработкой\n'
+            'Отгул за свой счет\n'
+            'Отгул в счет отпуска\n'
+            'Отмена'.format(self.test_username, today)
+        )
+
+        self.send_message('{} {}'.format(self._bot_name, tomorrow))
+        assert self.check_latest_response_with_retries(
+            'Давай по порядку. @{} берет отгул *{}*. Какой это будет отгул?\n'
+            'Отгул с отработкой\n'
+            'Отгул за свой счет\n'
+            'Отгул в счет отпуска\n'
+            'Отмена'.format(self.test_username, today_full)
+        )
+
+        self.send_message('{} С отработкой'.format(self._bot_name))
+        assert self.check_latest_response_with_retries(
+            'Отлично. Значит @{} берет отгул с отработкой {}.'
+            .format(self.test_username, today_full)
+        )
+
+        self.send_message('{} С отработкой'.format(self._bot_name))
+        assert self.check_latest_response_with_retries(
+            'Я не знал, что пользователь собирался брать отгул. '
+            'Если хочешь сообщить об отгуле, скажи @username хочет отгул.'
+        )
+
 
 def main():
     """The main entry point. """
