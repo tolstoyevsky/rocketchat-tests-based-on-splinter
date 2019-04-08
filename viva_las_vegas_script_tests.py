@@ -542,6 +542,141 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
             'Если хочешь сообщить об отгуле, скажи @username хочет отгул.'
         )
 
+    def test_sending_ill_request_without_working_from_home_and_interrupting_it(self):
+        """Tests if it's not possible to send a partially completed ill
+        request (without working from home).
+        """
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Очень жаль. Ты в состоянии работать из дома в эти дни?\n'
+            'Да\n'
+            'Нет'
+        )
+
+        self.send_message(
+            '{} Болею и не работаю'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Я понял. Согласовано ли отсутствие с руководителем/тимлидом?\n'
+            'Да\n'
+            'Нет'
+        )
+
+        self.send_message(
+            '{} Нет, они не предупреждены, что я болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Тогда сначала предупреди, а потом вернись и повтори все снова!'
+        )
+
+    def test_sending_ill_request_with_working_from_home_and_interrupting_it(self):
+        """Tests if it's not possible to send a partially completed ill
+        request (with working from home).
+        """
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Очень жаль. Ты в состоянии работать из дома в эти дни?\n'
+            'Да\n'
+            'Нет'
+        )
+
+        self.send_message(
+            '{} Болею и работаю'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Я понял. Согласовано ли отсутствие с руководителем/тимлидом?\n'
+            'Да\n'
+            'Нет'
+        )
+
+        self.send_message(
+            '{} Нет, они не предупреждены, что я болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Тогда сначала предупреди, а потом вернись и повтори все снова!'
+        )
+
+    def test_sending_ill_request(self):
+        """Tests if it's possible to send an ill request and approve it. """
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Очень жаль. Ты в состоянии работать из дома в эти дни?\n'
+            'Да\n'
+            'Нет'
+        )
+
+        self.send_message(
+            '{} Болею и работаю'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Я понял. Согласовано ли отсутствие с руководителем/тимлидом?\n'
+            'Да\n'
+            'Нет'
+        )
+
+        self.send_message(
+            '{} Да, они предупреждены, что я болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            r'(^Ok\. Выздоравливай поскорее\.(.*)'
+            r'Когда ты выйдешь на работу, скажи мне \`я не болею\`\.$)',
+            match=True
+        )
+
+        self.switch_channel('leave-coordination')
+        assert self.check_latest_response_with_retries(
+            '@{} болеет и работает из дома'.format(self.username)
+        )
+
+    def test_sending_ill_request_when_previous_one_is_approved(self):
+        """Tests if it's not possible to send an ill request when the previous
+        one has already been approved.
+        """
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Я уже слышал, что ты болеешь. 🤔'
+        )
+
+    def test_cancelling_approved_ill_request(self):
+        """Tests if it's possible to cancel the ill request which has already been approved. """
+
+        self.choose_general_channel()
+
+        self.send_message(
+            '{} не болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            r'(^Рад видеть тебя снова!(.*)$)',
+            match=True
+        )
+
+        self.send_message(
+            '{} не болею'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'Я ничего не знал о твоей болезни. 🤔'
+        )
+
 
 def main():
     """The main entry point. """
