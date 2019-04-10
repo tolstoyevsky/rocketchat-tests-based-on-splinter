@@ -87,7 +87,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
     # Public methods
     #
 
-    def test_admins_birthday_set(self):
+    def test_invoking_birthday_set_by_admin(self):
         """Tests if it's possible on behalf of the admin to set a birth date. """
 
         self.choose_general_channel()
@@ -99,7 +99,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
         assert self.check_latest_response_with_retries(
             "Saving {}'s birthday.".format(self.username))
 
-    def test_admins_birthdays_on(self):
+    def test_invoking_birthdays_on_by_admin(self):
         """Tests if it's possible on behalf of the admin to get the list of
         users with the specified birth date.
         """
@@ -227,7 +227,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
             .format(self.test_username)
         )
 
-    def test_checking_absence_of_test_user_in_channel(self):
+    def test_excluding_user_from_birthday_channel(self):
         """Tests if the user, who is having a birthday soon, is not in the birthday channel. """
 
         channel_options = self.find_by_css(
@@ -301,7 +301,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
         assert self.check_latest_response_with_retries(pattern, match=True,
                                                        attempts_number=self._reminder_interval_time)
 
-    def test_birthdays_list_command_with_no_birthday(self):
+    def test_invoking_birthdays_list_with_no_birth_dates_stored(self):
         """Tests the case when someone is invoking 'birthdays list' but there is
         no any birth date stored.
         """
@@ -558,7 +558,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
         self.browser.driver.execute_script('arguments[0].click();',
                                            close_btn[0])
 
-    def test_fwd_set_for_admin(self):
+    def test_invoking_fwd_set_by_admin(self):
         """Tests if it's possible on behalf of the admin to specify a first
         working date for a user.
         """
@@ -571,7 +571,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
         assert self.check_latest_response_with_retries(
             "Saving {}'s first working day.".format(self.username))
 
-    def test_fwd_reminder_for_admin(self):
+    def test_fwd_reminder_for_1_user(self):
         """Makes sure the bot writes a message to #general containing a
         congratulation on the work anniversary (the case when there is
         the only user celebrating the work anniversary).
@@ -583,7 +583,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
             self._get_fwd_congratulation_pattern([self.username, ], [1, ]),
             match=True, attempts_number=80)
 
-    def test_fwd_reminder_for_new_user(self):
+    def test_fwd_reminder_for_2_users(self):
         """Makes sure the bot writes a message to #general containing a
         congratulation on the work anniversary (the case when there are
         two users celebrating the work anniversary).
@@ -605,7 +605,7 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
             match=True,
             attempts_number=self._reminder_interval_time)
 
-    def test_fwd_list(self):
+    def test_invoking_fwd_list_with_2_dates(self):
         """Tests the case when someone is invoking 'fwd list' but there are
         only 2 dates stored.
         """

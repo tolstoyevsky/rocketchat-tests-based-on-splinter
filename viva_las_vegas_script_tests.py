@@ -288,7 +288,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
     # Public methods
     #
 
-    def test_sending_request_and_approving_it(self):
+    def test_approving_leave_request(self):
         """Tests if it's possible to send a leave request and approve it. """
 
         self.choose_general_channel()
@@ -299,7 +299,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self._approve_request()
         self._cancel_approved_request()
 
-    def test_sending_request_and_rejecting_it(self):
+    def test_rejecting_leave_request(self):
         """Tests if it's possible to send a leave request and reject it. """
 
         self._send_leave_request()
@@ -308,7 +308,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self._confirm_dates()
         self._reject_request()
 
-    def test_approve_notification(self):
+    def test_receiving_notification_once_leave_request_was_approved(self):
         """Tests if it's possible to send a leave request, approve it and
         receive the corresponding message from the bot.
         """
@@ -326,7 +326,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.choose_general_channel()
         self._cancel_approved_request()
 
-    def test_reject_notification(self):
+    def test_receiving_notification_once_leave_request_was_rejected(self):
         """Tests if it's possible to send a leave request, reject it and
         receive the corresponding message from the bot.
         """
@@ -342,7 +342,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.switch_channel(self._bot_name)
         self._check_reject_notification()
 
-    def test_cancel_notification(self):
+    def test_receiving_notification_once_approved_leave_request_was_canceled(self):
         """Tests if it's possible to send a leave request, approve and cancel
         it, and receive the corresponding message from the bot.
         """
@@ -360,8 +360,8 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.switch_channel(self._bot_name)
         self._check_cancel_notification()
 
-    def test_for_adding_weekends_to_vacation(self):
-        """Tests if the bot extends the length of the vacation period with
+    def test_expanding_leave_length_with_weekends(self):
+        """Tests if the bot expands the length of the leave period with
         weekends if the end of the period is on Friday.
         """
 
@@ -385,7 +385,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.send_message('{0} отклонить заявку @{1}'.format(self._bot_name,
                                                              self.username))
 
-    def test_vacation_notification_in_channel(self):
+    def test_informing_about_leave_requests(self):
         """Tests if the bot informs the users in the #leave-coordination
         channel when someone sends a leave request.
         """
@@ -403,7 +403,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self._approve_request()
         self._cancel_approved_request()
 
-    def test_receiving_approval_in_channel(self):
+    def test_informing_about_approved_leave_requests(self):
         """Tests if the bot informs the users in the #leave-coordination
         channel when the admin approves a leave request.
         """
@@ -421,7 +421,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.choose_general_channel()
         self._cancel_approved_request()
 
-    def test_receiving_reject_in_channel(self):
+    def test_informing_about_rejected_leave_requests(self):
         """Tests if the bot informs the users in the #leave-coordination
         channel when the admin rejects a leave request.
         """
@@ -437,7 +437,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.switch_channel('leave-coordination')
         self._check_reject_notification_in_channel()
 
-    def test_cancel_notification_in_channel(self):
+    def test_informing_about_canceled_leave_requests(self):
         """Tests if the bot informs the users in the #leave-coordination
         channel when the admin cancels the approved leave request.
         """
@@ -455,7 +455,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.switch_channel('leave-coordination')
         self._check_cancel_notification_in_channel()
 
-    def test_sending_request_and_approving_it_without_permission(self):
+    def test_approving_leave_request_without_permission(self):
         """Tests if it's not possible to approve a leave request without the
         corresponding permissions.
         """
@@ -476,7 +476,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self._approve_request(username=self.test_username)
         self._cancel_approved_request(username=self.test_username)
 
-    def test_sending_request_and_rejecting_it_without_permission(self):
+    def test_rejecting_leave_request_without_permission(self):
         """Tests if it's not possible to reject a leave request without the
         corresponding permissions.
         """
