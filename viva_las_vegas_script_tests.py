@@ -71,14 +71,17 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.send_message('01.01.1990')
 
     @staticmethod
-    def _get_pre_weekends_dates():
-        date = datetime.now() + timedelta(days=15)
-        day = date.weekday()
-        shift = 4 - day if day < 4 else 6 - day + 4
-        start_date = date.strftime('%d.%m')
-        end_date = (date + timedelta(days=shift)).strftime('%d.%m')
+    def _get_nearest_monday():
+        today = datetime.now()
+        nearest_monday = (today + timedelta(days=7) +
+                          timedelta(days=(0 - today.weekday() + 7) % 7))
+        return nearest_monday
 
-        return start_date, end_date, shift
+    def _get_pre_weekends_dates(self):
+        start_date = self._get_nearest_monday()
+        end_date = start_date + timedelta(days=4)
+
+        return start_date.strftime('%d.%m'), end_date.strftime('%d.%m')
 
     def _send_leave_request(self):
         self.send_message('{} хочу в отпуск'.format(self._bot_name))
@@ -369,7 +372,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
 
         assert self.check_latest_response_with_retries(FROM_MSG)
 
-        start_date, end_date, _ = self._get_pre_weekends_dates()
+        start_date, end_date = self._get_pre_weekends_dates()
         self.send_message('{0} {1}'.format(self._bot_name, start_date))
 
         assert self.check_latest_response_with_retries(TO_MSG)
@@ -377,7 +380,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.send_message('{0} {1}'.format(self._bot_name, end_date))
 
         assert self.check_latest_response_with_retries(
-            r'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
+            r'Значит ты планируешь находиться в отпуске 7 дней.*',
             match=True)
 
         self.send_message('{0} {1}'.format(self._bot_name, 'да'))
