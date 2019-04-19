@@ -251,21 +251,32 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
     def __del__(self):
         self.browser.quit()
 
-    def check_latest_response_with_retries(self, expected_text,
+    def check_latest_response_with_retries(self, expected_text,  # pylint: disable=too-many-arguments
                                            match=False, messages_number=1,
-                                           attempts_number=30):
+                                           attempts_number=30, ignore_report=True):
         """Checks the latest response from the bot with the specified number of
         retries if needed. """
 
         for _ in range(attempts_number):
-            latest_msg = self.browser.driver.find_elements_by_css_selector(
+            messages_list = self.browser.driver.find_elements_by_css_selector(
                 'div.body.color-primary-font-color ')
 
-            if not latest_msg:
+            if not messages_list:
                 time.sleep(1)
                 continue
 
-            latest_msg = latest_msg[-messages_number:]
+            if ignore_report:
+                regexp = r'^([*]Сегодня:[*])'
+                for item in messages_list:
+                    try:
+                        item_text = item.text
+                    except StaleElementReferenceException:
+                        messages_list.remove(item)
+                    else:
+                        if re.match(regexp, item_text):
+                            messages_list.remove(item)
+
+            latest_msg = messages_list[-messages_number:]
             try:
                 if match:
                     done = all([bool(re.match(expected_text, msg.text))
