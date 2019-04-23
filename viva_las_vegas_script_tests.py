@@ -667,18 +667,18 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.send_message('{} {}'.format(self._bot_name, today))
         assert self.check_latest_response_with_retries(
             'Отлично. Значит @{} берет отгул {}. Какой это будет отгул?\n'
-            'Отгул с отработкой\n'
-            'Отгул за свой счет\n'
-            'Отгул в счет отпуска\n'
+            'С отработкой\n'
+            'За свой счет\n'
+            'В счет отпуска\n'
             'Отмена'.format(self.test_username, today)
         )
 
         self.send_message('{} {}'.format(self._bot_name, tomorrow))
         assert self.check_latest_response_with_retries(
             'Давай по порядку. @{} берет отгул *{}*. Какой это будет отгул?\n'
-            'Отгул с отработкой\n'
-            'Отгул за свой счет\n'
-            'Отгул в счет отпуска\n'
+            'С отработкой\n'
+            'За свой счет\n'
+            'В счет отпуска\n'
             'Отмена'.format(self.test_username, today_full)
         )
 
