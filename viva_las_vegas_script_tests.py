@@ -288,6 +288,18 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
     # Public methods
     #
 
+    def test_check_not_in_office(self):
+        """Tests if it's possible to send `Я не в офисе` command """
+        self.send_message(
+            '{} Я не в офисе'.format(self._bot_name)
+        )
+        assert self.check_latest_response_with_retries(
+            'По какой причине ты будешь отсутствовать?\n'
+            'Болею\n'
+            'Буду работать из дома\n'
+            'Хочу оформить отпуск'
+        )
+
     def test_sending_request_and_approving_it(self):
         """Tests if it's possible to send a leave request and approve it. """
 
