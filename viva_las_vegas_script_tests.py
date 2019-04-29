@@ -250,7 +250,7 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
             'Пользователь @{0} отменил '
             'заявку на отпуск пользователя @{0}.'.format(self.username))
 
-    def _send_work_from_home_request(self, date, expect, reject=True):
+    def _send_work_from_home_request(self, date, expect):
         self.send_message(
             '{} работаю из дома'.format(self._bot_name)
         )
@@ -274,15 +274,6 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
             r'(^Отлично.(.*) Ты работаешь из дома {}.$)'.format(expect),
             match=True
         )
-
-        if reject:
-            self.send_message(
-                '{} Не работаю из дома'.format(self._bot_name)
-            )
-            assert self.check_latest_response_with_retries(
-                r'(^Я тебя понял.(.*)$)',
-                match=True
-            )
 
     #
     # Public methods
@@ -496,52 +487,6 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         self.switch_channel('leave-coordination')
         self._reject_request(username=self.test_username)
 
-    def test_sending_work_from_home_request_for_wrong_date(self):
-        """Tests if it's not possible to send a work from home request for a wrong date. """
-
-        self.choose_general_channel()
-
-        self.send_message(
-            '{} работаю из дома'.format(self._bot_name)
-        )
-        assert self.check_latest_response_with_retries(
-            'Ok, в какой день? (сегодня/завтра/дд.мм)'
-        )
-
-        today = datetime.now()
-        later_than_2_weeks_ahead = (
-            (today + timedelta(days=(13 - today.weekday()))).strftime('%d.%m')
-        )
-        self.send_message(
-            '{} {}'.format(self._bot_name, later_than_2_weeks_ahead)
-        )
-        assert self.check_latest_response_with_retries(
-            'Нельзя запланировать день работы из дома больше, чем на две недели вперед.'
-        )
-
-        yesterday = (today - timedelta(days=1)).strftime('%d.%m')
-        self.send_message(
-            '{} {}'.format(self._bot_name, yesterday)
-        )
-        assert self.check_latest_response_with_retries(
-            'Нельзя запланировать день работы из дома больше, чем на две недели вперед.'
-        )
-
-        self.send_message(
-            '{} сегодня'.format(self._bot_name)
-        )
-        assert self.check_latest_response_with_retries(
-            'Согласован ли этот день с руководителем/тимлидом?\n'
-            'Да\n'
-            'Нет'
-        )
-        self.send_message(
-            '{} Нет, не согласован'.format(self._bot_name)
-        )
-        assert self.check_latest_response_with_retries(
-            'Тогда сначала согласуй, а потом пробуй еще раз (ты знаешь где меня найти).'
-        )
-
     def test_sending_work_from_home_request_for_dd_mm(self):
         """Tests if it's possible to send a work from home request for a specific date. """
 
@@ -552,6 +497,13 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         dd_mm_yy = date.strftime('%d.%m.%Y')
         self._send_work_from_home_request(dd_mm, dd_mm_yy)
 
+        self.send_message('{} Не работаю из дома'.format(self._bot_name))
+        assert self.check_latest_response_with_retries(
+            'У тебя был запланирован день '
+            'работы из дома на {}. Я отменил его.'
+            .format(dd_mm_yy)
+        )
+
     def test_sending_work_from_home_request_for_tomorrow(self):
         """Tests if it's possible to send a work from home request for tomorrow. """
 
@@ -560,6 +512,13 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         today = datetime.now()
         expect = (today + timedelta(days=1)).strftime('%d.%m.%Y')
         self._send_work_from_home_request('завтра', expect)
+
+        self.send_message('{} Не работаю из дома'.format(self._bot_name))
+        assert self.check_latest_response_with_retries(
+            'У тебя был запланирован день '
+            'работы из дома на {}. Я отменил его.'
+            .format(expect)
+        )
 
     def test_sending_work_from_home_request_for_today(self):
         """Tests if it's possible to send a work from home request for today. """
@@ -570,24 +529,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         expect = today.strftime('%d.%m.%Y')
         self._send_work_from_home_request('сегодня', expect)
 
-    def test_sending_work_from_home_request_when_previous_one_is_approved(self):
-        """Tests if it's not possible to send a work from home request when the
-        previous one has already been approved.
-        """
-
-        self.choose_general_channel()
-
-        today = datetime.now()
-        expect = today.strftime('%d.%m.%Y')
-
-        self._send_work_from_home_request('сегодня', expect, reject=False)
-
-        self.send_message(
-            '{} работаю из дома'.format(self._bot_name)
-        )
+        self.send_message('{} Не работаю из дома'.format(self._bot_name))
         assert self.check_latest_response_with_retries(
-            "Ты уже работаешь из дома {}. "
-            "Если хочешь все отменить, скажи 'не работаю из дома' 😉."
+            'У тебя был запланирован день '
+            'работы из дома на {}. Я отменил его.'
             .format(expect)
         )
 
@@ -598,20 +543,38 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
 
         self.choose_general_channel()
 
+        today = datetime.now()
+        today_exprect = today.strftime('%d.%m.%Y')
+        tomorrow_exprect = (today + timedelta(days=1)).strftime('%d.%m.%Y')
+
+        self._send_work_from_home_request('сегодня', today_exprect)
+        self._send_work_from_home_request('завтра', tomorrow_exprect)
+
         self.send_message(
-            '{} не работаю из дома'.format(self._bot_name)
+            '{} Не работаю из дома'.format(self._bot_name)
         )
         assert self.check_latest_response_with_retries(
-            r'(^Я тебя понял(.*)$)',
+            'У тебя запланировано несколько дней работы из дома. О каком идет речь?\n'
+            '{}\n'
+            '{}'.format(today_exprect, tomorrow_exprect)
+        )
+
+        self.send_message(
+            '{} Не работаю из дома {}'
+            .format(self._bot_name, today_exprect)
+        )
+        assert self.check_latest_response_with_retries(
+            r'Я тебя понял. 👌(.*)',
             match=True
         )
 
         self.send_message(
-            '{} не работаю из дома'.format(self._bot_name)
+            '{} Не работаю из дома {}'
+            .format(self._bot_name, tomorrow_exprect)
         )
         assert self.check_latest_response_with_retries(
-            'У тебя не запланирован день работы из дома, '
-            'который можно было бы отменить, а прошлого не вернешь...'
+            r'Я тебя понял. 👌(.*)',
+            match=True
         )
 
     def test_sending_time_off_request_from_regular_user(self):
