@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=too-many-lines
+
 """Tests related to the hubot-viva-las-vegas script. """
 
 from argparse import ArgumentParser
@@ -828,6 +830,269 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
         assert self.check_latest_response_with_retries(
             'Я ничего не знал о твоей болезни. 🤔'
         )
+
+    #  advanced commands
+
+    def test_list_of_requests_command(self):
+        """Tests if it's possible to use a list of requests command. """
+
+        self.switch_channel(self._bot_name)
+        self.send_message('список заявок')
+
+        assert self.check_latest_response_with_retries(
+            "Никто не собирается в отпуск.")
+
+        self.send_message('{} хочу в отпуск'.format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(FROM_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_start_date))
+
+        assert self.check_latest_response_with_retries(TO_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_end_date))
+        assert self.check_latest_response_with_retries(
+            r'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
+            match=True)
+        self._confirm_dates()
+        self.send_message('список заявок')
+
+        assert self.check_latest_response_with_retries(
+            ".*\n@{0}.*".format(self.username), match=True)
+
+        self.send_message('{0} отклонить заявку @{1}'.format(self._bot_name,
+                                                             self.username))
+
+    def test_list_of_requests_without_permission(self):
+        """Tests if it's not possible to use a list of requests command without permissions. """
+
+        self.logout()
+        self.login(use_test_user=True)
+        self.switch_channel(self._bot_name)
+        self.send_message('список заявок')
+        assert self.check_latest_response_with_retries(
+            'У тебя недостаточно прав для этой команды 🙄'
+        )
+
+        self.logout()
+        self.login()
+
+    def test_user_wants_to_go_on_vacation(self):
+        """Tests if it's possible to use a @user wants to go on vacation command. """
+
+        self.choose_general_channel()
+        self.send_message("{0} @{1} хочет в отпуск".format(self._bot_name,
+                                                           self.username))
+
+        assert self.check_latest_response_with_retries(FROM_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_start_date))
+
+        assert self.check_latest_response_with_retries(TO_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_end_date))
+
+        assert self.check_latest_response_with_retries(
+            r'Значит @{} планирует находиться в отпуске \d* '
+            r'д(ня|ней|ень).*'.format(self.username),
+            match=True)
+
+        self.send_message('{0} Да, планирует'.format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(
+            "Заявка на отпуск для пользователя @{} создана и одобрена. "
+            "Событие добавлено в календарь.".format(self.username))
+
+    def test_reminding_customer(self):
+        """Tests if it's possible to ask a question to @user about reminding a customer. """
+
+        self.switch_channel(self._bot_name)
+        assert self.check_latest_response_with_retries(
+            "Привет, тебе оформлен отпуск с .*. "
+            "Заказчик предупрежден?", match=True)
+
+        self.send_message('Да, предупрежден')
+
+        assert self.check_latest_response_with_retries("👍")
+
+        self.send_message('{0} отменить заявку @{1}'.format(self._bot_name,
+                                                            self.username))
+
+    def test_user_wants_to_go_on_vacation_without_permission(self):
+        """Tests if it's not possible to use a @user wants to go on vacation
+        command without permissions.
+        """
+
+        self.logout()
+        self.login(use_test_user=True)
+        self.switch_channel(self._bot_name)
+        self.send_message("@{} хочет в отпуск".format(self.username))
+        assert self.check_latest_response_with_retries(
+            'У тебя недостаточно прав для этой команды 🙄'
+        )
+
+        self.logout()
+        self.login()
+
+    def test_viva_reset(self):
+        """Tests if it's possible to use a viva reset command. """
+
+        self.switch_channel(self._bot_name)
+        reset_start_date = self._figure_out_date(10, "%d.%m.%Y")
+        reset_end_date = self._figure_out_date(15, "%d.%m.%Y")
+        self.send_message("viva reset @{} {}-{}".format(self.username,
+                                                        reset_start_date,
+                                                        reset_end_date))
+
+        assert self.check_latest_response_with_retries(
+            'У этого пользователя не планировался отпуск.'
+        )
+
+        self.send_message('{} хочу в отпуск'.format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(FROM_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_start_date))
+
+        assert self.check_latest_response_with_retries(TO_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_end_date))
+
+        assert self.check_latest_response_with_retries(
+            r'Значит ты планируешь находиться в отпуске \d* д(ня|ней|ень).*',
+            match=True)
+
+        self._confirm_dates()
+        self.send_message("viva reset @{} {}-{}".format(self.username,
+                                                        reset_start_date,
+                                                        reset_end_date))
+
+        assert self.check_latest_response_with_retries(
+            "Даты отпуска успешно перезаписаны!\n"
+            "@{} в отпуске с {} по {}.".format(
+                self.username,
+                reset_start_date,
+                reset_end_date)
+        )
+
+        reset_end_date = self._figure_out_date(16, "%d.%m.%Y")
+        self.send_message("viva reset @{} *-{}".format(self.username,
+                                                       reset_end_date))
+
+        assert self.check_latest_response_with_retries(
+            "Даты отпуска успешно перезаписаны!\n"
+            "@{} в отпуске с {} по {}.".format(
+                self.username,
+                reset_start_date,
+                reset_end_date)
+        )
+
+        reset_start_date = self._figure_out_date(9, "%d.%m.%Y")
+        self.send_message("viva reset @{} {}-*".format(self.username,
+                                                       reset_start_date))
+
+        assert self.check_latest_response_with_retries(
+            "Даты отпуска успешно перезаписаны!\n"
+            "@{} в отпуске с {} по {}.".format(
+                self.username,
+                reset_start_date,
+                reset_end_date)
+        )
+
+        self.send_message('{0} отменить заявку @{1}'.format(self._bot_name,
+                                                            self.username))
+
+    def test_viva_reset_without_permissions(self):
+        """Tests if it's not possible to use a viva reset command without permissions. """
+
+        self.logout()
+        self.login(use_test_user=True)
+        self.switch_channel(self._bot_name)
+        self.send_message("viva reset @{} {}-{}".format(self.username,
+                                                        self._figure_out_date(
+                                                            10, "%d.%m.%Y"),
+                                                        self._figure_out_date(
+                                                            10, "%d.%m.%Y")))
+        assert self.check_latest_response_with_retries(
+            'У тебя недостаточно прав для этой команды 🙄'
+        )
+
+        self.logout()
+        self.login()
+
+    def test_daily_reminder(self):
+        """Tests if it's possible to remind in general channel about @user vacation. """
+
+        self.switch_channel(self._bot_name)
+        self.send_message("@{} хочет в отпуск".format(self.username))
+
+        assert self.check_latest_response_with_retries(FROM_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._figure_out_date(0)))
+
+        assert self.check_latest_response_with_retries(TO_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._figure_out_date(3)))
+
+        assert self.check_latest_response_with_retries(
+            r'Значит @{0} планирует находиться в отпуске \d* '
+            r'д(ня|ней|ень).*'.format(self.username),
+            match=True)
+
+        self.send_message('Да, планирует')
+
+        self.choose_general_channel()
+
+        assert self.check_latest_response_with_retries(
+            ".*\n.*@{0}.*".format(self.username), match=True,
+            attempts_number=80)
+
+        self.send_message('{0} отменить заявку @{1}'.format(self._bot_name,
+                                                            self.username))
+
+    def test_impossible_to_request_new_vacation_before_previous_ending(self):
+        """Tests if it's not possible to request new vacation before previous ending. """
+
+        self.send_message("{0} @{1} хочет в отпуск".format(self._bot_name,
+                                                           self.username))
+
+        assert self.check_latest_response_with_retries(FROM_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_start_date))
+
+        assert self.check_latest_response_with_retries(TO_MSG)
+
+        self.send_message('{0} {1}'.format(self._bot_name,
+                                           self._vacation_end_date))
+
+        assert self.check_latest_response_with_retries(
+            r'Значит @{} планирует находиться в отпуске \d* '
+            r'д(ня|ней|ень).*'.format(self.username),
+            match=True)
+
+        self.send_message('{0} Да, планирует'.format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(
+            "Заявка на отпуск для пользователя @{} создана и одобрена. "
+            "Событие добавлено в календарь.".format(self.username))
+
+        self.send_message('{} хочу в отпуск'.format(self._bot_name))
+
+        assert self.check_latest_response_with_retries(
+            "Твоя предыдущая заявка была одобрена, "
+            "так что сначала отгуляй этот отпуск.")
+
+        self.send_message('{0} отменить заявку @{1}'.format(self._bot_name,
+                                                            self.username))
 
 
 def main():
