@@ -27,6 +27,8 @@ ADDR=${ADDR:="127.0.0.1"}
 
 PORT=${PORT:=8006}
 
+EXP_ROOMS=${EXP_ROOMS:="hr,leave-coordination"}
+
 USERNAME=${USERNAME:=""}
 
 PASSWORD=${PASSWORD:=""}
@@ -84,11 +86,11 @@ for i in "${RUN[@]}"; do
     case "${i}" in
         # General tests for Rocket.Chat
         rc)
-            ${PYTHON} rc_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" || exit_code=$?
+            ${PYTHON} rc_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --rooms="${EXP_ROOMS}"|| exit_code=$?
             ;;
         # Tests for different scripts
         happy_birthder_script)
-            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}" || exit_code=$?
+            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}" --rooms="${EXP_ROOMS}" || exit_code=$?
             ;;
         pugme_script)
             ${PYTHON} pugme_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --pugs_limit="${PUGS_LIMIT}" || exit_code=$?

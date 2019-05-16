@@ -79,8 +79,9 @@ def main():
             'Pugs limit is not specified. Defaults to {}.\n'.format(options.pugs_limit)
         )
 
-    test_cases = PugmeScriptTestCase(options.host, options.username, options.password,
-                                     pugs_limit=options.pugs_limit, create_test_user=False)
+    test_cases = PugmeScriptTestCase(options.host, options.username,
+                                     options.password,
+                                     pugs_limit=options.pugs_limit)
     exit_code = test_cases.run()
     sys.exit(exit_code)
 
