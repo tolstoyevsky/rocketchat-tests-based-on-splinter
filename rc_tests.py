@@ -29,14 +29,14 @@ import pyperclip
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 
-from base import RocketChatTestCase
+from base import RocketChatTestCase, APIError
 
 
 class GeneralRocketChatTestCase(RocketChatTestCase):
     """General tests for Rocket.Chat. """
 
-    def __init__(self, addr, username, password, **kwargs):
-        RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
+    def __init__(self, addr, username, password, expected_rooms, **kwargs):
+        RocketChatTestCase.__init__(self, addr, username, password, expected_rooms, **kwargs)
 
         self.make_connections('connect_to_rc_api')
 
@@ -60,100 +60,6 @@ class GeneralRocketChatTestCase(RocketChatTestCase):
     #
     # Private methods
     #
-
-    def _delete_channels(self):
-        options_btn = self.browser.driver.find_elements_by_css_selector(
-            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
-
-        assert options_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           options_btn[-1])
-
-        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
-        administration_btn.click()
-
-        rooms_btn = self.browser.driver.find_elements_by_css_selector(
-            'a.sidebar-item__link[aria-label="Rooms"]')
-
-        assert rooms_btn
-
-        self.browser.driver.execute_script("arguments[0].click();",
-                                           rooms_btn[0])
-
-        selected_room = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.format(
-                self._public_channel_name))
-
-        assert selected_room
-
-        selected_room.click()
-
-        delete_btn = self.browser.driver.find_element_by_class_name('button')
-
-        assert delete_btn
-
-        delete_btn.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert confirm_btn
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        selected_room = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.format(
-                self._private_channel_name))
-
-        assert selected_room
-
-        selected_room.click()
-
-        delete_btn = self.browser.driver.find_element_by_class_name('button')
-
-        assert delete_btn
-
-        delete_btn.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert confirm_btn
-
-        confirm_btn.first.click()
-
-        WebDriverWait(self.browser.driver, 10).until(
-            lambda _: self._check_modal_window_visibility())
-
-        selected_room = self.browser.find_by_xpath(
-            '//td[@class="border-component-color"][text()="{0}"]'.format(
-                self._read_only_channel_name))
-
-        assert selected_room
-
-        selected_room.click()
-
-        delete_btn = self.browser.driver.find_element_by_class_name('button')
-
-        assert delete_btn
-
-        delete_btn.click()
-
-        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
-
-        assert confirm_btn
-
-        confirm_btn.first.click()
-
-        close_btn = self.browser.driver.find_elements_by_css_selector(
-            'button[data-action="close"]')
-
-        assert close_btn
-
-        self.browser.driver.execute_script('arguments[0].click();',
-                                           close_btn[0])
 
     @staticmethod
     def _check_elem_disabled_state(elem):
@@ -192,6 +98,27 @@ class GeneralRocketChatTestCase(RocketChatTestCase):
     #
     # Public methods
     #
+
+    def tear_down(self):
+        """Makes clean up of the testing environment. """
+
+        print('Tear down for Rocket.Chat base tests: "started"')
+        clean_methods = (
+            self.delete_all_extra_users,
+            self.delete_all_extra_rooms,
+        )
+
+        for clean_method in clean_methods:
+            print('Running {}'.format(clean_method.__name__))
+
+            try:
+                clean_method()
+
+            except APIError as error:
+                print('Tear down: finished with status "failed"')
+                raise error
+
+        print('Tear down: finished with status "done"')
 
     def test_creating_user(self): # pylint: disable=too-many-locals
         """Tests if it's possible to create user. """
@@ -1080,6 +1007,71 @@ class GeneralRocketChatTestCase(RocketChatTestCase):
         self.browser.driver.execute_script('arguments[0].click();',
                                            close_btn[0])
 
+    def test_deleting_room(self):
+        """ Tests if it's possible to delete room in administration interface. """
+
+        does_public_channel_exist = self.check_with_retries(
+            self.does_room_exist,
+            self._public_channel_name
+        )
+
+        assert does_public_channel_exist
+
+        options_btn = self.browser.driver.find_elements_by_css_selector(
+            '.sidebar__toolbar-button.rc-tooltip.rc-tooltip--down.js-button')
+
+        assert options_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           options_btn[-1])
+
+        administration_btn = self.browser.find_by_css('.rc-popover__item-text')
+        administration_btn.click()
+
+        rooms_btn = self.browser.driver.find_elements_by_css_selector(
+            'a.sidebar-item__link[aria-label="Rooms"]')
+
+        assert rooms_btn
+
+        self.browser.driver.execute_script("arguments[0].click();",
+                                           rooms_btn[0])
+
+        selected_room = self.browser.find_by_xpath(
+            '//td[@class="border-component-color"][text()="{0}"]'.format(
+                self._public_channel_name))
+
+        assert selected_room
+
+        selected_room.click()
+
+        delete_btn = self.browser.driver.find_element_by_class_name('button')
+
+        assert delete_btn
+
+        delete_btn.click()
+
+        confirm_btn = self.find_by_css('input[value="Yes, delete it!"]')
+
+        assert confirm_btn
+
+        confirm_btn.first.click()
+
+        does_public_channel_exist = self.check_with_retries(
+            self.does_room_exist,
+            self._public_channel_name,
+            expected_res=False
+        )
+
+        assert not does_public_channel_exist
+
+        close_btn = self.browser.driver.find_elements_by_css_selector(
+            'button[data-action="close"]')
+
+        assert close_btn
+
+        self.browser.driver.execute_script('arguments[0].click();',
+                                           close_btn[0])
+
     def test_pasting_string_from_clipboard(self):
         """Tests if it's possible to paste a string from the clipboard and send
         it to the #general channel.
@@ -1277,8 +1269,12 @@ def main():
     if not options.password:
         parser.error('Password is not specified')
 
+    if not options.exp_rooms:
+        options.exp_rooms = 'hr,leave-coordination'
+
     test_cases = GeneralRocketChatTestCase(options.host, options.username,
-                                           options.password)
+                                           options.password,
+                                           expected_rooms=options.exp_rooms,)
     exit_code = test_cases.run()
     sys.exit(exit_code)
 

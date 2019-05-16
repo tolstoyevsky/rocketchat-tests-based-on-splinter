@@ -86,7 +86,7 @@ for i in "${RUN[@]}"; do
     case "${i}" in
         # General tests for Rocket.Chat
         rc)
-            ${PYTHON} rc_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" || exit_code=$?
+            ${PYTHON} rc_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --rooms="${EXP_ROOMS}"|| exit_code=$?
             ;;
         # Tests for different scripts
         happy_birthder_script)

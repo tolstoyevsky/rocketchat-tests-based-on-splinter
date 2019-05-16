@@ -512,6 +512,23 @@ class RocketChatTestCase(SplinterTestCase):  # pylint: disable=too-many-instance
 
         return result != []
 
+    def does_room_exist(self, room_name):
+        """Checks if the specified room exists. """
+
+        response = self.rocket.rooms_get().json()
+
+        try:
+            rooms = response['update']
+        except KeyError:
+            raise APIError(response.get('error'))
+
+        rooms_existing_map = []
+
+        for room in rooms:
+            rooms_existing_map.append(room_name in room.get('name', []))
+
+        return True in rooms_existing_map
+
     def create_user(self):
         """Creates a test user. """
 
