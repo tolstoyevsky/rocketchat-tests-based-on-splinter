@@ -27,14 +27,17 @@ from datetime import datetime, timedelta
 
 from selenium.webdriver.support.wait import WebDriverWait
 
-from base import RocketChatTestCase
+from base import RocketChatTestCase, APIError
 
 
 class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-many-public-methods
     """Tests for the hubot-happy-birthder script. """
 
-    def __init__(self, addr, username, password, reminder_interval_time, **kwargs):
-        RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
+    # pylint: disable=too-many-arguments
+    def __init__(self, addr, username, password, reminder_interval_time,
+                 expected_rooms, **kwargs):
+        RocketChatTestCase.__init__(self, addr, username, password,
+                                    expected_rooms, **kwargs)
 
         self.make_connections('connect_to_rc_api')
 
@@ -88,6 +91,27 @@ class HappyBirthderScriptTestCase(RocketChatTestCase):  # pylint: disable=too-ma
     #
     # Public methods
     #
+
+    def tear_down(self):
+        """Makes clean up of the testing environment. """
+
+        print('Tear down for happy_birthder_script tests: "started"')
+        clean_methods = (
+            self.delete_all_extra_rooms,
+            self.delete_all_extra_users
+            )
+
+        for clean_method in clean_methods:
+            print('Running {}'.format(clean_method.__name__))
+
+            try:
+                clean_method()
+
+            except APIError as error:
+                print('Tear down: finished with status "failed"')
+                raise error
+
+        print('Tear down: finished with status "done"')
 
     def test_admins_birthday_set(self):
         """Tests if it's possible on behalf of the admin to set a birth date. """
@@ -641,6 +665,10 @@ def main():
     parser.add_argument('-w', '--wait', dest='wait', type=int,
                         help="allows specifying time "
                              "for waiting reminder\'s work(secs)")
+    parser.add_argument('-r', '--rooms', dest='exp_rooms',
+                        help='allows specifying the private groups and '
+                             'channels which must be in Rocket.Chat when the '
+                             'tests are running')
 
     options = parser.parse_args()
 
@@ -662,9 +690,13 @@ def main():
             'Waiting time is not specified. Defaults to {}.\n'.format(options.wait)
         )
 
+    if not options.exp_rooms:
+        options.exp_rooms = 'hr,leave-coordination'
+
     test_cases = HappyBirthderScriptTestCase(options.host, options.username,
                                              options.password,
                                              reminder_interval_time=options.wait,
+                                             expected_rooms=options.exp_rooms,
                                              )
     exit_code = test_cases.run()
     sys.exit(exit_code)

@@ -90,7 +90,7 @@ for i in "${RUN[@]}"; do
             ;;
         # Tests for different scripts
         happy_birthder_script)
-            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}" || exit_code=$?
+            ${PYTHON} happy_birthder_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --wait="${WAIT}" --rooms="${EXP_ROOMS}" || exit_code=$?
             ;;
         pugme_script)
             ${PYTHON} pugme_script_tests.py --host="${HOST}" --username="${USERNAME}" --password="${PASSWORD}" --pugs_limit="${PUGS_LIMIT}" || exit_code=$?
