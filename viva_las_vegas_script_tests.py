@@ -19,7 +19,7 @@
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
-from base import RocketChatTestCase
+from base import RocketChatTestCase, APIError
 
 FROM_MSG = 'Ok, с какого числа? (дд.мм)'
 
@@ -35,6 +35,10 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
 
     def __init__(self, addr, username, password, **kwargs):
         RocketChatTestCase.__init__(self, addr, username, password, **kwargs)
+
+        self.make_connections('connect_to_rc_api')
+
+        self.schedule_pre_test_case('create_user')
 
         self.schedule_pre_test_case('choose_general_channel')
 
@@ -287,6 +291,26 @@ class VivaLasVegasScriptTestCase(RocketChatTestCase):  # pylint: disable=too-man
     #
     # Public methods
     #
+
+    def tear_down(self):
+        """Makes clean up of the testing environment. """
+
+        print('Tear down for viva_las_vegas_script tests: "started"')
+        clean_methods = (
+            self.delete_all_extra_users,
+        )
+
+        for clean_method in clean_methods:
+            print('Running {}'.format(clean_method.__name__))
+
+            try:
+                clean_method()
+
+            except APIError as error:
+                print('Tear down: finished with status "failed"')
+                raise error
+
+        print('Tear down: finished with status "done"')
 
     def test_sending_request_and_approving_it(self):
         """Tests if it's possible to send a leave request and approve it. """
@@ -852,8 +876,7 @@ def main():
         parser.error('Password is not specified')
 
     test_cases = VivaLasVegasScriptTestCase(options.host, options.username,
-                                            options.password,
-                                            create_test_user=True)
+                                            options.password)
     test_cases.run()
 
 
